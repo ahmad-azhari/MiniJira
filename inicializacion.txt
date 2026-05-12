@@ -1,0 +1,20 @@
+# Crear entorno virtual
+python -m venv venv
+
+# Activar entorno (Windows)
+venv\Scripts\activate
+
+# Activar entorno (macOS/Linux)
+source venv/bin/activate
+
+# Instalar desde requirements.txt
+pip install -r requirements.txt
+
+# Verificar instalación
+pip list
+
+# Opción A: Usar script dedicado (crea tablas + datos de prueba)
+python scripts/inicializar_bd.py
+
+# Opción B: Ejecutar la app (también crea tablas automáticamente)
+python run.py

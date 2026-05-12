@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block titulo %}Casos de Prueba - Mini Jira{% endblock %}
+
+{% block contenido %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>📋 Casos de Prueba</h1>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('casos_prueba_bp.crear') }}" class="btn btn-primary">+ Nuevo Caso</a>
+    </div>
+</div>
+
+{% if casos %}
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Nombre</th>
+                    <th>Objetivo</th>
+                    <th>Tipo</th>
+                    <th>Prioridad</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for caso in casos %}
+                    <tr>
+                        <td><strong>{{ caso.nombre }}</strong></td>
+                        <td>{{ caso.objetivo[:50] }}...</td>
+                        <td><span class="badge bg-info">{{ caso.tipo.value }}</span></td>
+                        <td>
+                            <span class="badge bg-{% if caso.prioridad.value == 'CRÍTICA' %}danger{% elif caso.prioridad.value == 'ALTA' %}warning{% elif caso.prioridad.value == 'MEDIA' %}secondary{% else %}success{% endif %}">
+                                {{ caso.prioridad.value }}
+                            </span>
+                        </td>
+                        <td><span class="badge bg-secondary">{{ caso.estado.value }}</span></td>
+                        <td>
+                            <a href="{{ url_for('casos_prueba_bp.detalle', caso_id=caso.id) }}" class="btn btn-sm btn-outline-primary">Ver</a>
+                            <a href="{{ url_for('casos_prueba_bp.editar', caso_id=caso.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="alert alert-info">No hay casos de prueba aún.</div>
+{% endif %}
+{% endblock %}

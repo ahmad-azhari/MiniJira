@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block titulo %}{{ epica.nombre }} - Mini Jira{% endblock %}
+
+{% block contenido %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>{{ epica.nombre }}</h1>
+        <p class="text-muted">{{ epica.descripcion }}</p>
+        <div class="mt-2">
+            <span class="badge bg-secondary">{{ epica.estado.value }}</span>
+            <span class="badge bg-info">{{ epica.tipo.value }}</span>
+            <span class="badge bg-warning">Prioridad: {{ epica.prioridad.value }}</span>
+        </div>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('epicas_bp.editar', epica_id=epica.id) }}" class="btn btn-warning">✏️ Editar</a>
+        <form method="POST" action="{{ url_for('epicas_bp.eliminar', epica_id=epica.id) }}" style="display:inline;">
+            <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro?')">🗑️ Eliminar</button>
+        </form>
+    </div>
+</div>
+
+{% if epica.tipo.value == 'EPIC' %}
+    <div class="mt-4">
+        <h3>Historias</h3>
+        <a href="{{ url_for('epicas_bp.crear_historia', epica_id=epica.id) }}" class="btn btn-sm btn-primary mb-3">+ Nueva Historia</a>
+
+        {% set historias = epica.historias %}
+        {% if historias %}
+            <div class="list-group">
+                {% for historia in historias %}
+                    <a href="{{ url_for('epicas_bp.detalle', epica_id=historia.id) }}" class="list-group-item list-group-item-action">
+                        <h6>{{ historia.nombre }}</h6>
+                        <small>Estado: <strong>{{ historia.estado.value }}</strong> | Prioridad: {{ historia.prioridad.value }}</small>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info">No hay historias en esta épica.</div>
+        {% endif %}
+    </div>
+{% endif %}
+
+<div class="mt-4">
+    <p class="small text-muted">
+        Creada: {{ epica.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}<br>
+        Última modificación: {{ epica.fecha_modificacion.strftime('%d/%m/%Y %H:%M') if epica.fecha_modificacion else 'N/A' }}
+    </p>
+</div>
+{% endblock %}

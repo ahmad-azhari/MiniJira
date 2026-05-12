@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block titulo %}{{ ciclo.nombre }} - Mini Jira{% endblock %}
+
+{% block contenido %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>{{ ciclo.nombre }}</h1>
+        <p class="text-muted">{{ ciclo.descripcion }}</p>
+        <div class="mt-2">
+            <span class="badge bg-secondary">{{ ciclo.estado.value }}</span>
+        </div>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('ciclos_prueba_bp.editar', ciclo_id=ciclo.id) }}" class="btn btn-warning">✏️ Editar</a>
+        <form method="POST" action="{{ url_for('ciclos_prueba_bp.eliminar', ciclo_id=ciclo.id) }}" style="display:inline;">
+            <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro?')">🗑️ Eliminar</button>
+        </form>
+    </div>
+</div>
+
+<div class="mt-4">
+    <h3>Casos de Prueba ({{ ciclo.casos_prueba|length }})</h3>
+
+    <form method="POST" action="{{ url_for('ciclos_prueba_bp.agregar_caso', ciclo_id=ciclo.id) }}" class="mb-3">
+        <div class="input-group">
+            <select class="form-select" name="caso_id" required>
+                <option selected disabled>-- Seleccionar caso --</option>
+                {% for caso in casos_disponibles %}
+                    <option value="{{ caso.id }}">{{ caso.nombre }}</option>
+                {% endfor %}
+            </select>
+            <button class="btn btn-outline-primary" type="submit">Agregar</button>
+        </div>
+    </form>
+
+    {% if ciclo.casos_prueba %}
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Caso de Prueba</th>
+                        <th>Tipo</th>
+                        <th>Prioridad</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for caso in ciclo.casos_prueba %}
+                        <tr>
+                            <td>{{ caso.nombre }}</td>
+                            <td><span class="badge bg-info">{{ caso.tipo.value }}</span></td>
+                            <td><span class="badge bg-warning">{{ caso.prioridad.value }}</span></td>
+                            <td>
+                                <a href="{{ url_for('casos_prueba_bp.detalle', caso_id=caso.id) }}" class="btn btn-sm btn-outline-primary">Ver</a>
+                                <form method="POST" action="{{ url_for('ciclos_prueba_bp.quitar_caso', ciclo_id=ciclo.id, caso_id=caso.id) }}" style="display:inline;">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Quitar</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info">No hay casos en este ciclo.</div>
+    {% endif %}
+</div>
+{% endblock %}

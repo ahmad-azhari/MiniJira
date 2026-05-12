@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block titulo %}Reportes - Mini Jira{% endblock %}
+
+{% block contenido %}
+<h1>📊 Dashboard</h1>
+
+<div class="row mt-4 mb-5">
+    <div class="col-md-3 mb-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h6 class="card-title">Proyectos</h6>
+                <h2>{{ stats.proyectos }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <h6 class="card-title">Épicas</h6>
+                <h2>{{ stats.epicas }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h6 class="card-title">Casos de Prueba</h6>
+                <h2>{{ stats.casos }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-white bg-danger">
+            <div class="card-body">
+                <h6 class="card-title">Defectos Nuevos</h6>
+                <h2>{{ stats.defectos_nuevos }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h3>Estado de Épicas</h3>
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <h6>Nuevas</h6>
+                <h3 class="text-warning">{{ stats.epicas_nuevas }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <h6>En Progreso</h6>
+                <h3 class="text-info">{{ stats.epicas_en_progreso }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <h6>Completadas</h6>
+                <h3 class="text-success">{{ stats.epicas_completadas }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h3>Resultados de Pruebas</h3>
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body text-center">
+                <h6>Pasadas</h6>
+                <h3 class="text-success">{{ stats.resultados_pasados }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body text-center">
+                <h6>Fallidas</h6>
+                <h3 class="text-danger">{{ stats.resultados_fallidos }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if ultimas_epicas %}
+    <h3>Últimas Épicas</h3>
+    <div class="list-group mb-4">
+        {% for epica in ultimas_epicas %}
+            <a href="{{ url_for('epicas_bp.detalle', epica_id=epica.id) }}" class="list-group-item list-group-item-action">
+                <h6>{{ epica.nombre }}</h6>
+                <small>{{ epica.estado.value }} | Prioridad: {{ epica.prioridad.value }}</small>
+            </a>
+        {% endfor %}
+    </div>
+{% endif %}
+
+{% if ultimos_defectos %}
+    <h3>Últimos Defectos</h3>
+    <div class="list-group">
+        {% for defecto in ultimos_defectos %}
+            <a href="{{ url_for('defectos_bp.detalle', defecto_id=defecto.id) }}" class="list-group-item list-group-item-action">
+                <h6>{{ defecto.titulo }}</h6>
+                <small>{{ defecto.estado.value }} | Prioridad: {{ defecto.prioridad.value }}</small>
+            </a>
+        {% endfor %}
+    </div>
+{% endif %}
+{% endblock %}

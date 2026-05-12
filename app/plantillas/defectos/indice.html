@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block titulo %}Defectos - Mini Jira{% endblock %}
+
+{% block contenido %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>🐛 Defectos</h1>
+    </div>
+</div>
+
+{% if defectos %}
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Título</th>
+                    <th>Prioridad</th>
+                    <th>Estado</th>
+                    <th>Reportado por</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for defecto in defectos %}
+                    <tr>
+                        <td><strong>{{ defecto.titulo }}</strong></td>
+                        <td>
+                            <span class="badge bg-{% if defecto.prioridad.value == 'CRÍTICA' %}danger{% elif defecto.prioridad.value == 'ALTA' %}warning{% elif defecto.prioridad.value == 'MEDIA' %}secondary{% else %}success{% endif %}">
+                                {{ defecto.prioridad.value }}
+                            </span>
+                        </td>
+                        <td><span class="badge bg-secondary">{{ defecto.estado.value }}</span></td>
+                        <td>{{ defecto.usuario_reporte.nombre_usuario }}</td>
+                        <td>
+                            <a href="{{ url_for('defectos_bp.detalle', defecto_id=defecto.id) }}" class="btn btn-sm btn-outline-primary">Ver</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="alert alert-info">No hay defectos reportados aún.</div>
+{% endif %}
+{% endblock %}

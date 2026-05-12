@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block titulo %}Perfil - {{ usuario.nombre_usuario }}{% endblock %}
+
+{% block contenido %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Perfil de Usuario</h4>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <strong>Nombre de usuario:</strong>
+                    </div>
+                    <div class="col-md-8">
+                        {{ usuario.nombre_usuario }}
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <strong>Email:</strong>
+                    </div>
+                    <div class="col-md-8">
+                        {{ usuario.email }}
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <strong>Estado:</strong>
+                    </div>
+                    <div class="col-md-8">
+                        {% if usuario.activo %}
+                            <span class="badge bg-success">Activo</span>
+                        {% else %}
+                            <span class="badge bg-danger">Inactivo</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <strong>Roles:</strong>
+                    </div>
+                    <div class="col-md-8">
+                        {% if usuario.roles %}
+                            {% for rol in usuario.roles %}
+                                <span class="badge bg-info">{{ rol.nombre }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="text-muted">Sin roles asignados</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <strong>Fecha de creación:</strong>
+                    </div>
+                    <div class="col-md-8">
+                        {{ usuario.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="mt-4">
+                    {% if session.usuario_id == usuario.id or 'admin' in session.get('roles', []) %}
+                        <a href="{{ url_for('usuarios_bp.editar', usuario_id=usuario.id) }}" class="btn btn-warning">
+                            ✏️ Editar Perfil
+                        </a>
+                    {% endif %}
+                    <a href="{{ url_for('usuarios_bp.indice') }}" class="btn btn-secondary">
+                        ← Volver a Usuarios
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block titulo %}{{ caso.nombre }} - Mini Jira{% endblock %}
+
+{% block contenido %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>{{ caso.nombre }}</h1>
+        <p class="text-muted"><strong>Objetivo:</strong> {{ caso.objetivo }}</p>
+        <div class="mt-2">
+            <span class="badge bg-info">{{ caso.tipo.value }}</span>
+            <span class="badge bg-warning">{{ caso.prioridad.value }}</span>
+            <span class="badge bg-secondary">{{ caso.estado.value }}</span>
+        </div>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('casos_prueba_bp.editar', caso_id=caso.id) }}" class="btn btn-warning">✏️ Editar</a>
+        <form method="POST" action="{{ url_for('casos_prueba_bp.eliminar', caso_id=caso.id) }}" style="display:inline;">
+            <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro?')">🗑️ Eliminar</button>
+        </form>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <h5>Precondición</h5>
+        <p>{{ caso.precondicion or 'N/A' }}</p>
+
+        <h5>Descripción</h5>
+        <p>{{ caso.descripcion or 'N/A' }}</p>
+    </div>
+    <div class="col-md-6">
+        <h5>Resultado Esperado</h5>
+        <p>{{ caso.resultado_esperado or 'N/A' }}</p>
+
+        <h5>Información</h5>
+        <p>
+            <strong>Creado por:</strong> {{ caso.usuario_creacion.nombre_usuario }}<br>
+            <strong>Fecha:</strong> {{ caso.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}
+        </p>
+    </div>
+</div>
+
+<div class="mt-4">
+    <h5>Resultados de Ejecución</h5>
+    <a href="{{ url_for('resultados_bp.crear', caso_id=caso.id) }}" class="btn btn-sm btn-success mb-3">+ Registrar Resultado</a>
+
+    <a href="{{ url_for('defectos_bp.crear', caso_id=caso.id) }}" class="btn btn-sm btn-danger mb-3">🐛 Reportar Defecto</a>
+</div>
+{% endblock %}

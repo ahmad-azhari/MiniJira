@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block titulo %}Ciclos de Prueba - Mini Jira{% endblock %}
+
+{% block contenido %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>🔄 Ciclos de Prueba</h1>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('ciclos_prueba_bp.crear') }}" class="btn btn-primary">+ Nuevo Ciclo</a>
+    </div>
+</div>
+
+{% if ciclos %}
+    <div class="row">
+        {% for ciclo in ciclos %}
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-light">
+                        <h5>{{ ciclo.nombre }}</h5>
+                        <small class="text-muted">Estado: <strong>{{ ciclo.estado.value }}</strong></small>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">{{ ciclo.descripcion }}</p>
+                        <p class="small text-muted">
+                            <strong>Casos:</strong> {{ ciclo.casos_prueba|length }}
+                        </p>
+                    </div>
+                    <div class="card-footer">
+                        <a href="{{ url_for('ciclos_prueba_bp.detalle', ciclo_id=ciclo.id) }}" class="btn btn-sm btn-outline-primary">Ver Detalle</a>
+                        <a href="{{ url_for('ciclos_prueba_bp.editar', ciclo_id=ciclo.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="alert alert-info">No hay ciclos de prueba aún.</div>
+{% endif %}
+{% endblock %}

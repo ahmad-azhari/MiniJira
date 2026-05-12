@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block titulo %}{{ defecto.titulo }} - Mini Jira{% endblock %}
+
+{% block contenido %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>{{ defecto.titulo }}</h1>
+        <p class="text-muted"><strong>Caso:</strong> {{ defecto.caso_prueba.nombre }}</p>
+        <div class="mt-2">
+            <span class="badge bg-danger">{{ defecto.estado.value }}</span>
+            <span class="badge bg-warning">{{ defecto.prioridad.value }}</span>
+        </div>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('defectos_bp.editar', defecto_id=defecto.id) }}" class="btn btn-warning">✏️ Editar</a>
+        <form method="POST" action="{{ url_for('defectos_bp.eliminar', defecto_id=defecto.id) }}" style="display:inline;">
+            <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro?')">🗑️ Eliminar</button>
+        </form>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <h5>Descripción</h5>
+        <p>{{ defecto.descripcion }}</p>
+
+        <h5>Pasos para Reproducir</h5>
+        <pre>{{ defecto.pasos_reproduccion or 'N/A' }}</pre>
+    </div>
+    <div class="col-md-6">
+        <h5>Resultado Esperado</h5>
+        <p>{{ defecto.resultado_esperado or 'N/A' }}</p>
+
+        <h5>Resultado Actual</h5>
+        <p>{{ defecto.resultado_actual or 'N/A' }}</p>
+
+        <h5>Información</h5>
+        <p>
+            <strong>Reportado por:</strong> {{ defecto.usuario_reporte.nombre_usuario }}<br>
+            <strong>Asignado a:</strong> {{ defecto.usuario_asignado.nombre_usuario if defecto.usuario_asignado else 'Sin asignar' }}<br>
+            <strong>Fecha:</strong> {{ defecto.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}
+        </p>
+    </div>
+</div>
+{% endblock %}

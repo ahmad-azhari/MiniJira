@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block titulo %}Reportar Defecto - Mini Jira{% endblock %}
+
+{% block contenido %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h1>Reportar Nuevo Defecto</h1>
+        <p class="text-muted">Caso de Prueba: <strong>{{ caso.nombre }}</strong></p>
+
+        <form method="POST" class="mt-4">
+            <div class="mb-3">
+                <label for="titulo" class="form-label">Título *</label>
+                <input type="text" class="form-control" id="titulo" name="titulo" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="descripcion" class="form-label">Descripción *</label>
+                <textarea class="form-control" id="descripcion" name="descripcion" rows="3" required></textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="pasos_reproduccion" class="form-label">Pasos para Reproducir</label>
+                <textarea class="form-control" id="pasos_reproduccion" name="pasos_reproduccion" rows="3" placeholder="1. Paso 1&#10;2. Paso 2&#10;..."></textarea>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="resultado_esperado" class="form-label">Resultado Esperado</label>
+                        <textarea class="form-control" id="resultado_esperado" name="resultado_esperado" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="resultado_actual" class="form-label">Resultado Actual</label>
+                        <textarea class="form-control" id="resultado_actual" name="resultado_actual" rows="2"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="prioridad" class="form-label">Prioridad</label>
+                        <select class="form-select" id="prioridad" name="prioridad">
+                            <option value="BAJA">Baja</option>
+                            <option value="MEDIA" selected>Media</option>
+                            <option value="ALTA">Alta</option>
+                            <option value="CRÍTICA">Crítica</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="asignado_a_id" class="form-label">Asignar a</label>
+                        <select class="form-select" id="asignado_a_id" name="asignado_a_id">
+                            <option value="">-- Sin asignar --</option>
+                            {% for usuario in usuarios %}
+                                <option value="{{ usuario.id }}">{{ usuario.nombre_usuario }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-danger">Reportar Defecto</button>
+                <a href="{{ url_for('casos_prueba_bp.detalle', caso_id=caso.id) }}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

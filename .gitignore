@@ -1,0 +1,7 @@
+.env
+usuarios.txt
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+instance/

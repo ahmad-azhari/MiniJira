@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block titulo %}{{ proyecto.nombre }} - Mini Jira{% endblock %}
+
+{% block contenido %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>{{ proyecto.nombre }}</h1>
+        <p class="text-muted">{{ proyecto.descripcion }}</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('proyectos_bp.editar', proyecto_id=proyecto.id) }}" class="btn btn-warning">✏️ Editar</a>
+        <form method="POST" action="{{ url_for('proyectos_bp.eliminar', proyecto_id=proyecto.id) }}" style="display:inline;">
+            <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro?')">🗑️ Eliminar</button>
+        </form>
+    </div>
+</div>
+
+<ul class="nav nav-tabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="epicas-tab" data-bs-toggle="tab" data-bs-target="#epicas" type="button" role="tab">Épicas</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="historias-tab" data-bs-toggle="tab" data-bs-target="#historias" type="button" role="tab">Historias Sueltas</button>
+    </li>
+</ul>
+
+<div class="tab-content mt-3">
+    <div class="tab-pane fade show active" id="epicas" role="tabpanel">
+        <a href="{{ url_for('epicas_bp.crear_epica', proyecto_id=proyecto.id) }}" class="btn btn-sm btn-primary mb-3">+ Nueva Épica</a>
+
+        {% if epicas_con_historias %}
+            {% for item in epicas_con_historias %}
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5>{{ item.epica.nombre }}</h5>
+                        <small class="text-muted">Prioridad: <strong>{{ item.epica.prioridad.value }}</strong> | Estado: <strong>{{ item.epica.estado.value }}</strong></small>
+                    </div>
+                    <div class="card-body">
+                        <p>{{ item.epica.descripcion }}</p>
+                        {% if item.historias %}
+                            <h6>Historias:</h6>
+                            <ul>
+                                {% for historia in item.historias %}
+                                    <li>{{ historia.nombre }} <span class="badge bg-secondary">{{ historia.estado.value }}</span></li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        <a href="{{ url_for('epicas_bp.detalle', epica_id=item.epica.id) }}" class="btn btn-sm btn-outline-primary">Ver</a>
+                        <a href="{{ url_for('epicas_bp.crear_historia', epica_id=item.epica.id) }}" class="btn btn-sm btn-outline-success">+ Historia</a>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-info">No hay épicas aún.</div>
+        {% endif %}
+    </div>
+
+    <div class="tab-pane fade" id="historias" role="tabpanel">
+        {% if historias_sueltas %}
+            <div class="list-group">
+                {% for historia in historias_sueltas %}
+                    <a href="{{ url_for('epicas_bp.detalle', epica_id=historia.id) }}" class="list-group-item list-group-item-action">
+                        <h6>{{ historia.nombre }}</h6>
+                        <small>{{ historia.estado.value }}</small>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info">No hay historias sueltas.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

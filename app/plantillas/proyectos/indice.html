@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block titulo %}Proyectos - Mini Jira{% endblock %}
+
+{% block contenido %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>📁 Proyectos</h1>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('proyectos_bp.crear') }}" class="btn btn-primary">+ Nuevo Proyecto</a>
+    </div>
+</div>
+
+{% if proyectos %}
+    <div class="row">
+        {% for proyecto in proyectos %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ proyecto.nombre }}</h5>
+                        <p class="card-text text-muted small">{{ proyecto.descripcion[:100] }}...</p>
+                        <span class="badge bg-{% if proyecto.estado.value == 'ACTIVO' %}success{% elif proyecto.estado.value == 'PAUSADO' %}warning{% else %}secondary{% endif %}">
+                            {{ proyecto.estado.value }}
+                        </span>
+                    </div>
+                    <div class="card-footer bg-light">
+                        <a href="{{ url_for('proyectos_bp.detalle', proyecto_id=proyecto.id) }}" class="btn btn-sm btn-outline-primary">Ver Detalle</a>
+                        <a href="{{ url_for('proyectos_bp.editar', proyecto_id=proyecto.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="alert alert-info">
+        <strong>No hay proyectos aún.</strong> <a href="{{ url_for('proyectos_bp.crear') }}">Crea uno ahora</a>
+    </div>
+{% endif %}
+{% endblock %}
