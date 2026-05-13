@@ -158,3 +158,20 @@ def activar(usuario_id):
 
     flash(f'Usuario "{usuario.nombre_usuario}" activado.', 'success')
     return redirect(url_for('usuarios_bp.indice'))
+
+
+@usuarios_bp.route('/<int:usuario_id>/eliminar', methods=['POST'])
+@requerir_admin
+def eliminar(usuario_id):
+    usuario = Usuario.query.get_or_404(usuario_id)
+
+    if usuario_id == session.get('usuario_id'):
+        flash('No puedes eliminar tu propia cuenta.', 'danger')
+        return redirect(url_for('usuarios_bp.perfil', usuario_id=usuario_id))
+
+    nombre_usuario = usuario.nombre_usuario
+    db.session.delete(usuario)
+    db.session.commit()
+
+    flash(f'Usuario "{nombre_usuario}" eliminado permanentemente.', 'success')
+    return redirect(url_for('usuarios_bp.indice'))

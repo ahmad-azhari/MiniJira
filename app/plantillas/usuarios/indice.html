@@ -5,10 +5,10 @@
 {% block contenido %}
 <div class="row mb-4">
     <div class="col-md-8">
-        <h1>👥 Gestión de Usuarios</h1>
+        <h1>Gestión de Usuarios</h1>
     </div>
     <div class="col-md-4 text-end">
-        <a href="{{ url_for('usuarios_bp.crear') }}" class="btn btn-primary">+ Nuevo Usuario</a>
+        <a href="{{ url_for('usuarios_bp.crear') }}" class="btn btn-primary">Nuevo Usuario</a>
     </div>
 </div>
 
@@ -46,13 +46,16 @@
                             <a href="{{ url_for('usuarios_bp.editar', usuario_id=usuario.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
                             {% if usuario.activo %}
                                 <form method="POST" action="{{ url_for('usuarios_bp.desactivar', usuario_id=usuario.id) }}" style="display:inline;">
-                                    <button type="submit" class="btn btn-sm btn-outline-warning" onclick="return confirm('¿Desactivar?')">Desactivar</button>
+                                    <button type="submit" class="btn btn-sm btn-outline-warning" onclick="return confirm('¿Desactivar este usuario?')">Desactivar</button>
                                 </form>
                             {% else %}
                                 <form method="POST" action="{{ url_for('usuarios_bp.activar', usuario_id=usuario.id) }}" style="display:inline;">
                                     <button type="submit" class="btn btn-sm btn-outline-success">Activar</button>
                                 </form>
                             {% endif %}
+                            <form method="POST" action="{{ url_for('usuarios_bp.eliminar', usuario_id=usuario.id) }}" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar permanentemente este usuario? Esta acción no se puede deshacer.')">Eliminar</button>
+                            </form>
                         </td>
                     </tr>
                 {% endfor %}

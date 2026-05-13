@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block titulo %}Historias - Mini Jira{% endblock %}
+
+{% block contenido %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>Historias de Usuario</h1>
+    </div>
+</div>
+
+{% if historias_con_epica %}
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>Historia</th>
+                    <th>Épica Padre</th>
+                    <th>Proyecto</th>
+                    <th>Estado</th>
+                    <th>Prioridad</th>
+                    <th>Casos de Prueba</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in historias_con_epica %}
+                    <tr>
+                        <td><strong>{{ item.historia.nombre }}</strong></td>
+                        <td>
+                            {% if item.epica_padre %}
+                                <a href="{{ url_for('epicas_bp.detalle', epica_id=item.epica_padre.id) }}">
+                                    {{ item.epica_padre.nombre }}
+                                </a>
+                            {% else %}
+                                <span class="text-muted">Sin épica padre</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.proyecto %}
+                                <a href="{{ url_for('proyectos_bp.detalle', proyecto_id=item.proyecto.id) }}">
+                                    {{ item.proyecto.nombre }}
+                                </a>
+                            {% else %}
+                                <span class="text-muted">Sin proyecto</span>
+                            {% endif %}
+                        </td>
+                        <td><span class="badge bg-secondary">{{ item.historia.estado.value }}</span></td>
+                        <td>
+                            <span class="badge bg-{% if item.historia.prioridad.value == 'alta' %}danger{% elif item.historia.prioridad.value == 'media' %}warning{% else %}success{% endif %}">
+                                {{ item.historia.prioridad.value }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ item.casos_count }}</span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('epicas_bp.detalle', epica_id=item.historia.id) }}" class="btn btn-sm btn-outline-primary">Ver</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="alert alert-info">No hay historias creadas aún. Crea una desde una <a href="{{ url_for('epicas_bp.indice') }}">Épica</a>.</div>
+{% endif %}
+{% endblock %}

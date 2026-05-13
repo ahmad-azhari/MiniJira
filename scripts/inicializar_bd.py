@@ -18,7 +18,7 @@ def inicializar_bd():
         print("✓ Tablas creadas exitosamente")
 
         if not Rol.query.first():
-            print("\n▶ Creando roles base...")
+            print("\n Creando roles base...")
             roles = [
                 Rol(nombre=RolEnum.ADMIN.value, descripcion="Acceso completo al sistema"),
                 Rol(nombre=RolEnum.MIEMBRO.value, descripcion="Puede crear y editar épicas, historias, casos de prueba y defectos"),
@@ -26,9 +26,9 @@ def inicializar_bd():
             ]
             db.session.add_all(roles)
             db.session.commit()
-            print(f"✓ {len(roles)} roles creados")
+            print(f" {len(roles)} roles creados")
 
-            print("\n▶ Creando usuarios de prueba...")
+            print("\n Creando usuarios de prueba...")
             admin_rol = Rol.query.filter_by(nombre=RolEnum.ADMIN.value).first()
             miembro_rol = Rol.query.filter_by(nombre=RolEnum.MIEMBRO.value).first()
             viewer_rol = Rol.query.filter_by(nombre=RolEnum.VIEWER.value).first()
@@ -47,10 +47,10 @@ def inicializar_bd():
 
             db.session.add_all([admin, miembro, viewer])
             db.session.commit()
-            print(f"✓ 3 usuarios de prueba creados")
+            print(f" 3 usuarios de prueba creados")
 
         if not Proyecto.query.first():
-            print("\n▶ Creando proyectos de prueba...")
+            print("\n Creando proyectos de prueba...")
             admin = Usuario.query.filter_by(nombre_usuario="admin").first()
 
             proyecto1 = Proyecto(
@@ -67,9 +67,9 @@ def inicializar_bd():
             )
             db.session.add_all([proyecto1, proyecto2])
             db.session.commit()
-            print(f"✓ 2 proyectos creados")
+            print(f" 2 proyectos creados")
 
-            print("\n▶ Creando épicas...")
+            print("\n Creando épicas...")
             epica1 = Epica(
                 nombre="Módulo NLP",
                 tipo=TipoEnum.EPIC,
@@ -99,9 +99,9 @@ def inicializar_bd():
             )
             db.session.add_all([epica1, epica2, epica3])
             db.session.commit()
-            print(f"✓ 3 épicas creadas")
+            print(f" 3 épicas creadas")
 
-            print("\n▶ Creando historias de usuario...")
+            print("\n Creando historias de usuario...")
             historia1 = Epica(
                 nombre="UI de Login",
                 tipo=TipoEnum.STORY,
@@ -124,9 +124,9 @@ def inicializar_bd():
             )
             db.session.add_all([historia1, historia2])
             db.session.commit()
-            print(f"✓ 2 historias creadas")
+            print(f" 2 historias creadas")
 
-            print("\n▶ Creando casos de prueba...")
+            print("\n Creando casos de prueba...")
             caso1 = CasoPrueba(
                 nombre="Login con credenciales válidas",
                 objetivo="Verificar que un usuario puede iniciar sesión",
@@ -153,7 +153,7 @@ def inicializar_bd():
             db.session.commit()
             print(f"✓ 2 casos de prueba creados")
 
-            print("\n▶ Creando ciclos de prueba...")
+            print("\n Creando ciclos de prueba...")
             ciclo1 = CicloPrueba(
                 nombre="Sprint 1 - Pruebas",
                 descripcion="Ciclo de pruebas del primer sprint",
@@ -161,22 +161,22 @@ def inicializar_bd():
             )
             db.session.add(ciclo1)
             db.session.commit()
-            print(f"✓ 1 ciclo de prueba creado")
+            print(f" 1 ciclo de prueba creado")
 
-            print("\n▶ Asociando casos a ciclo...")
+            print("\n Asociando casos a ciclo...")
             ciclo1.casos_prueba.append(caso1)
             ciclo1.casos_prueba.append(caso2)
             db.session.commit()
-            print(f"✓ Casos asociados al ciclo")
+            print(f" Casos asociados al ciclo")
 
             print("\n" + "="*50)
-            print("✓ BASE DE DATOS INICIALIZADA EXITOSAMENTE")
+            print(" BASE DE DATOS INICIALIZADA EXITOSAMENTE")
             print("="*50)
-            print("\n📝 Usuarios de prueba creados:")
+            print("\n Usuarios de prueba creados:")
             print("  • admin / admin123")
             print("  • miembro / miembro123")
             print("  • viewer / viewer123")
-            print("\n🔗 Proyectos creados:")
+            print("\n Proyectos creados:")
             print(f"  • {proyecto1.nombre}")
             print(f"  • {proyecto2.nombre}")
 

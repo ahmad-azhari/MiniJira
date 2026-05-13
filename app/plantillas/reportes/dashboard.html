@@ -3,40 +3,54 @@
 {% block titulo %}Reportes - Mini Jira{% endblock %}
 
 {% block contenido %}
-<h1>Dashboard</h1>
+<h1>Reportes</h1>
 
-<div class="row mt-4 mb-5">
+<div class="row mb-3">
+    <div class="col-md-3">
+        <a href="{{ url_for('reportes_bp.reporte_calidad') }}" class="btn btn-outline-primary w-100">Reporte de Calidad</a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('reportes_bp.reporte_proyectos') }}" class="btn btn-outline-primary w-100">Reporte de Proyectos</a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('reportes_bp.reporte_defectos') }}" class="btn btn-outline-primary w-100">Reporte de Defectos</a>
+    </div>
+</div>
+
+<hr>
+
+<div class="row mb-5">
     <div class="col-md-3 mb-3">
-        <div class="card text-white bg-primary">
-            <div class="card-body">
+        <a href="{{ url_for('reportes_bp.reporte_proyectos') }}" class="card text-decoration-none h-100" style="cursor: pointer;">
+            <div class="card-body text-center" style="background: linear-gradient(135deg, #0052cc 0%, #0055cc 100%); color: white;">
                 <h6 class="card-title">Proyectos</h6>
                 <h2>{{ stats.proyectos }}</h2>
             </div>
-        </div>
+        </a>
     </div>
     <div class="col-md-3 mb-3">
-        <div class="card text-white bg-info">
-            <div class="card-body">
+        <a href="{{ url_for('epicas_bp.indice') }}" class="card text-decoration-none h-100" style="cursor: pointer;">
+            <div class="card-body text-center" style="background: linear-gradient(135deg, #216e4e 0%, #1b5e42 100%); color: white;">
                 <h6 class="card-title">Épicas</h6>
                 <h2>{{ stats.epicas }}</h2>
             </div>
-        </div>
+        </a>
     </div>
     <div class="col-md-3 mb-3">
-        <div class="card text-white bg-warning">
-            <div class="card-body">
+        <a href="{{ url_for('reportes_bp.reporte_calidad') }}" class="card text-decoration-none h-100" style="cursor: pointer;">
+            <div class="card-body text-center" style="background: linear-gradient(135deg, #974f0c 0%, #7d3f05 100%); color: white;">
                 <h6 class="card-title">Casos de Prueba</h6>
                 <h2>{{ stats.casos }}</h2>
             </div>
-        </div>
+        </a>
     </div>
     <div class="col-md-3 mb-3">
-        <div class="card text-white bg-danger">
-            <div class="card-body">
+        <a href="{{ url_for('reportes_bp.reporte_defectos') }}" class="card text-decoration-none h-100" style="cursor: pointer;">
+            <div class="card-body text-center" style="background: linear-gradient(135deg, #ae2a19 0%, #8c1f14 100%); color: white;">
                 <h6 class="card-title">Defectos Nuevos</h6>
                 <h2>{{ stats.defectos_nuevos }}</h2>
             </div>
-        </div>
+        </a>
     </div>
 </div>
 

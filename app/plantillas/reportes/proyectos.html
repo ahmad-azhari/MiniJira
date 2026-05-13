@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block titulo %}Reporte de Proyectos - Mini Jira{% endblock %}
+
+{% block contenido %}
+<h1>Reporte de Proyectos</h1>
+
+{% if data %}
+    <div class="table-responsive mt-4">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>Proyecto</th>
+                    <th>Épicas</th>
+                    <th>Historias</th>
+                    <th>Casos de Prueba</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in data %}
+                    <tr>
+                        <td><strong>{{ item.proyecto.nombre }}</strong></td>
+                        <td><span class="badge bg-primary">{{ item.epicas }}</span></td>
+                        <td><span class="badge bg-info">{{ item.historias }}</span></td>
+                        <td><span class="badge bg-warning">{{ item.casos }}</span></td>
+                        <td>
+                            <a href="{{ url_for('proyectos_bp.detalle', proyecto_id=item.proyecto.id) }}" class="btn btn-sm btn-outline-primary">Ver</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="alert alert-info">No hay proyectos registrados aún.</div>
+{% endif %}
+{% endblock %}

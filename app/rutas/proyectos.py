@@ -2,19 +2,9 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from app.base_datos import db
 from app.modelos import Proyecto, Epica
 from config.constantes import TipoEnum
+from app.decoradores import requerir_autenticacion, requerir_miembro, requerir_admin
 
 proyectos_bp = Blueprint('proyectos_bp', __name__, url_prefix='/proyectos')
-
-
-def requerir_autenticacion(f):
-    from functools import wraps
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if 'usuario_id' not in session:
-            flash('Debes iniciar sesión.', 'warning')
-            return redirect(url_for('auth_bp.login'))
-        return f(*args, **kwargs)
-    return wrapper
 
 
 @proyectos_bp.route('/')
@@ -60,7 +50,7 @@ def detalle(proyecto_id):
 
 
 @proyectos_bp.route('/nuevo', methods=['GET', 'POST'])
-@requerir_autenticacion
+@requerir_miembro
 def crear():
     if request.method == 'POST':
         nombre = request.form.get('nombre', '').strip()
@@ -91,7 +81,7 @@ def crear():
 
 
 @proyectos_bp.route('/<int:proyecto_id>/editar', methods=['GET', 'POST'])
-@requerir_autenticacion
+@requerir_miembro
 def editar(proyecto_id):
     proyecto = Proyecto.query.get_or_404(proyecto_id)
 
@@ -116,7 +106,7 @@ def editar(proyecto_id):
 
 
 @proyectos_bp.route('/<int:proyecto_id>/eliminar', methods=['POST'])
-@requerir_autenticacion
+@requerir_admin
 def eliminar(proyecto_id):
     proyecto = Proyecto.query.get_or_404(proyecto_id)
     nombre = proyecto.nombre

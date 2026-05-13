@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block titulo %}Épicas - Mini Jira{% endblock %}
+
+{% block contenido %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>Épicas</h1>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('proyectos_bp.indice') }}" class="btn btn-primary">Crear Épica</a>
+    </div>
+</div>
+
+{% if epicas_con_proyecto %}
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>Épica</th>
+                    <th>Proyecto</th>
+                    <th>Estado</th>
+                    <th>Prioridad</th>
+                    <th>Historias</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in epicas_con_proyecto %}
+                    <tr>
+                        <td><strong>{{ item.epica.nombre }}</strong></td>
+                        <td>
+                            {% if item.proyecto %}
+                                <a href="{{ url_for('proyectos_bp.detalle', proyecto_id=item.proyecto.id) }}">
+                                    {{ item.proyecto.nombre }}
+                                </a>
+                            {% else %}
+                                <span class="text-muted">Sin proyecto</span>
+                            {% endif %}
+                        </td>
+                        <td><span class="badge bg-secondary">{{ item.epica.estado.value }}</span></td>
+                        <td>
+                            <span class="badge bg-{% if item.epica.prioridad.value == 'alta' %}danger{% elif item.epica.prioridad.value == 'media' %}warning{% else %}success{% endif %}">
+                                {{ item.epica.prioridad.value }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ item.historias_count }}</span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('epicas_bp.detalle', epica_id=item.epica.id) }}" class="btn btn-sm btn-outline-primary">Ver</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="alert alert-info">No hay épicas creadas aún. Crea una desde <a href="{{ url_for('proyectos_bp.indice') }}">Proyectos</a>.</div>
+{% endif %}
+{% endblock %}

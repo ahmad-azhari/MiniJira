@@ -4,7 +4,7 @@ from app.modelos import (
     CicloPrueba, Usuario
 )
 from config.constantes import (
-    EstadoEnum, EstadoResultadoEnum, EstadoDefectoEnum
+    EstadoEnum, EstadoResultadoEnum, EstadoDefectoEnum, TipoEnum, PrioridadEnum
 )
 from functools import wraps
 from flask import flash, redirect, url_for
@@ -70,9 +70,9 @@ def reporte_proyectos():
 
     data = []
     for proyecto in proyectos:
-        epicas = Epica.query.filter_by(proyecto_id=proyecto.id, tipo__ne='STORY').count()
-        historias = Epica.query.filter_by(proyecto_id=proyecto.id, tipo='STORY').count()
-        casos = CasoPrueba.query.join(Epica).filter(Epica.proyecto_id == proyecto.id).count()
+        epicas = Epica.query.filter(Epica.proyecto_id == proyecto.id, Epica.tipo != TipoEnum.STORY).count()
+        historias = Epica.query.filter(Epica.proyecto_id == proyecto.id, Epica.tipo == TipoEnum.STORY).count()
+        casos = CasoPrueba.query.join(CasoPrueba.epicas).filter(Epica.proyecto_id == proyecto.id).count()
 
         data.append({
             'proyecto': proyecto,
@@ -117,6 +117,7 @@ def reporte_calidad():
         })
 
     return render_template('reportes/calidad.html',
+                         total_casos=total_casos,
                          tasa_exito=tasa_exito,
                          total_defectos=total_defectos,
                          defectos_abiertos=defectos_abiertos,
@@ -132,12 +133,11 @@ def reporte_defectos():
         defectos_por_estado[estado.value] = count
 
     defectos_por_prioridad = {}
-    from config.constantes import PrioridadEnum
     for prioridad in PrioridadEnum:
         count = Defecto.query.filter_by(prioridad=prioridad).count()
         defectos_por_prioridad[prioridad.value] = count
 
-    defectos_asignados = Defecto.query.filter(Defecto.asignado_a_id.isnot(None)).all()
+    defectos_asignados = Defecto.query.filter(Defecto.usuario_asignado_id.isnot(None)).all()
 
     usuarios_asignacion = {}
     for defecto in defectos_asignados:

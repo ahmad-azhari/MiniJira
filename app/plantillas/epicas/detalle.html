@@ -24,7 +24,7 @@
 {% if epica.tipo.value == 'epic' %}
     <div class="mt-4">
         <h3>Historias</h3>
-        <a href="{{ url_for('epicas_bp.crear_historia', epica_id=epica.id) }}" class="btn btn-sm btn-primary mb-3">+ Nueva Historia</a>
+        <a href="{{ url_for('epicas_bp.crear_historia', epica_id=epica.id) }}" class="btn btn-sm btn-primary mb-3">Nueva Historia</a>
 
         {% set historias = epica.historias_hijas %}
         {% if historias %}
@@ -41,6 +41,61 @@
         {% endif %}
     </div>
 {% endif %}
+
+<div class="mt-4">
+    <h3>Casos de Prueba</h3>
+
+    {% set casos_disponibles = epica.casos_prueba | list %}
+    <form method="POST" action="{{ url_for('epicas_bp.agregar_caso_historia', historia_id=epica.id) }}" class="mb-3">
+        <div class="row g-2">
+            <div class="col-md-8">
+                <select class="form-select" name="caso_id" required>
+                    <option value="">Seleccionar caso de prueba</option>
+                    {% for caso in casos_prueba_disponibles %}
+                        {% if caso not in casos_disponibles %}
+                            <option value="{{ caso.id }}">{{ caso.nombre }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary w-100">Agregar Caso</button>
+            </div>
+        </div>
+    </form>
+
+    {% if epica.casos_prueba %}
+        <div class="table-responsive">
+            <table class="table table-sm table-striped">
+                <thead>
+                    <tr>
+                        <th>Caso</th>
+                        <th>Tipo</th>
+                        <th>Prioridad</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for caso in epica.casos_prueba %}
+                        <tr>
+                            <td><strong>{{ caso.nombre }}</strong></td>
+                            <td><span class="badge bg-info">{{ caso.tipo.value }}</span></td>
+                            <td><span class="badge bg-{% if caso.prioridad.value == 'alta' %}danger{% elif caso.prioridad.value == 'media' %}warning{% else %}success{% endif %}">{{ caso.prioridad.value }}</span></td>
+                            <td>
+                                <a href="{{ url_for('casos_prueba_bp.detalle', caso_id=caso.id) }}" class="btn btn-sm btn-outline-primary">Ver</a>
+                                <form method="POST" action="{{ url_for('epicas_bp.quitar_caso_historia', historia_id=epica.id, caso_id=caso.id) }}" style="display:inline;">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Remover</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info">No hay casos de prueba asociados.</div>
+    {% endif %}
+</div>
 
 <div class="mt-4">
     <p class="small text-muted">

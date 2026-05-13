@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block titulo %}Reporte de Calidad - Mini Jira{% endblock %}
+
+{% block contenido %}
+<h1>Reporte de Calidad</h1>
+
+<div class="row mt-4 mb-5">
+    <div class="col-md-6 mb-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h6 class="card-title">Total de Casos</h6>
+                <h3 class="text-primary">{{ total_casos }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h6 class="card-title">Tasa de Éxito</h6>
+                <h3 class="text-success">{{ "%.1f"|format(tasa_exito) }}%</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h3>Defectos</h3>
+<div class="row mb-4">
+    <div class="col-md-6 mb-3">
+        <a href="{{ url_for('reportes_bp.reporte_defectos') }}" class="card text-decoration-none h-100" style="cursor: pointer;">
+            <div class="card-body text-center">
+                <h6>Total de Defectos</h6>
+                <h3 class="text-danger">{{ total_defectos }}</h3>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-6 mb-3">
+        <a href="{{ url_for('reportes_bp.reporte_defectos') }}" class="card text-decoration-none h-100" style="cursor: pointer;">
+            <div class="card-body text-center">
+                <h6>Defectos Abiertos/En Progreso</h6>
+                <h3 class="text-warning">{{ defectos_abiertos }}</h3>
+            </div>
+        </a>
+    </div>
+</div>
+
+{% if ciclo_stats %}
+    <h3>Ciclos de Prueba</h3>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Ciclo</th>
+                    <th>Total Casos</th>
+                    <th>Resultados</th>
+                    <th>Pasadas</th>
+                    <th>Tasa de Éxito</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stats in ciclo_stats %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('ciclos_prueba_bp.detalle', ciclo_id=stats.ciclo.id) }}">
+                                <strong>{{ stats.ciclo.nombre }}</strong>
+                            </a>
+                        </td>
+                        <td>{{ stats.total_casos }}</td>
+                        <td>{{ stats.total_resultados }}</td>
+                        <td>{{ stats.pasados }}</td>
+                        <td>
+                            <span class="badge bg-{% if stats.tasa >= 80 %}success{% elif stats.tasa >= 50 %}warning{% else %}danger{% endif %}">
+                                {{ "%.1f"|format(stats.tasa) }}%
+                            </span>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="alert alert-info">No hay ciclos de prueba registrados aún.</div>
+{% endif %}
+{% endblock %}
