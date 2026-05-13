@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block titulo %}Editar Caso de Prueba - {{ caso.nombre }}{% endblock %}
+
+{% block contenido %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h1>Editar Caso de Prueba</h1>
+
+        <form method="POST" class="mt-4">
+            <div class="mb-3">
+                <label for="nombre" class="form-label">Nombre del Caso *</label>
+                <input type="text" class="form-control" id="nombre" name="nombre" value="{{ caso.nombre }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="objetivo" class="form-label">Objetivo *</label>
+                <textarea class="form-control" id="objetivo" name="objetivo" rows="3" required>{{ caso.objetivo }}</textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="precondicion" class="form-label">Precondición</label>
+                <textarea class="form-control" id="precondicion" name="precondicion" rows="2">{{ caso.precondicion or '' }}</textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="descripcion" class="form-label">Descripción</label>
+                <textarea class="form-control" id="descripcion" name="descripcion" rows="3">{{ caso.descripcion or '' }}</textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="resultado_esperado" class="form-label">Resultado Esperado</label>
+                <textarea class="form-control" id="resultado_esperado" name="resultado_esperado" rows="3">{{ caso.resultado_esperado or '' }}</textarea>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="tipo" class="form-label">Tipo de Test</label>
+                        <select class="form-select" id="tipo" name="tipo">
+                            <option value="manual" {% if caso.tipo.value == 'manual' %}selected{% endif %}>Manual</option>
+                            <option value="automatizado" {% if caso.tipo.value == 'automatizado' %}selected{% endif %}>Automatizado</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="prioridad" class="form-label">Prioridad</label>
+                        <select class="form-select" id="prioridad" name="prioridad">
+                            <option value="baja" {% if caso.prioridad.value == 'baja' %}selected{% endif %}>Baja</option>
+                            <option value="media" {% if caso.prioridad.value == 'media' %}selected{% endif %}>Media</option>
+                            <option value="alta" {% if caso.prioridad.value == 'alta' %}selected{% endif %}>Alta</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="estado" class="form-label">Estado</label>
+                        <select class="form-select" id="estado" name="estado">
+                            <option value="nuevo" {% if caso.estado.value == 'nuevo' %}selected{% endif %}>Nuevo</option>
+                            <option value="en_progreso" {% if caso.estado.value == 'en_progreso' %}selected{% endif %}>En Progreso</option>
+                            <option value="terminado" {% if caso.estado.value == 'terminado' %}selected{% endif %}>Terminado</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-warning"> Guardar Cambios</button>
+                <a href="{{ url_for('casos_prueba_bp.detalle', caso_id=caso.id) }}" class="btn btn-secondary"> Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

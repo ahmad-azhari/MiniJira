@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block titulo %}Editar Proyecto - {{ proyecto.nombre }}{% endblock %}
+
+{% block contenido %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h1>Editar Proyecto</h1>
+
+        <form method="POST" class="mt-4">
+            <div class="mb-3">
+                <label for="nombre" class="form-label">Nombre del Proyecto *</label>
+                <input type="text" class="form-control" id="nombre" name="nombre" value="{{ proyecto.nombre }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="descripcion" class="form-label">Descripción</label>
+                <textarea class="form-control" id="descripcion" name="descripcion" rows="4">{{ proyecto.descripcion or '' }}</textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="estado" class="form-label">Estado</label>
+                <select class="form-select" id="estado" name="estado">
+                    <option value="activo" {% if proyecto.estado.value == 'activo' %}selected{% endif %}>Activo</option>
+                    <option value="en_pausa" {% if proyecto.estado.value == 'en_pausa' %}selected{% endif %}>En Pausa</option>
+                    <option value="cerrado" {% if proyecto.estado.value == 'cerrado' %}selected{% endif %}>Cerrado</option>
+                </select>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-warning"> Guardar Cambios</button>
+                <a href="{{ url_for('proyectos_bp.detalle', proyecto_id=proyecto.id) }}" class="btn btn-secondary"> Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

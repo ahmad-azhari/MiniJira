@@ -14,19 +14,19 @@
         </div>
     </div>
     <div class="col-md-4 text-end">
-        <a href="{{ url_for('epicas_bp.editar', epica_id=epica.id) }}" class="btn btn-warning">✏️ Editar</a>
+        <a href="{{ url_for('epicas_bp.editar', epica_id=epica.id) }}" class="btn btn-warning"> Editar</a>
         <form method="POST" action="{{ url_for('epicas_bp.eliminar', epica_id=epica.id) }}" style="display:inline;">
-            <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro?')">🗑️ Eliminar</button>
+            <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro?')"> Eliminar</button>
         </form>
     </div>
 </div>
 
-{% if epica.tipo.value == 'EPIC' %}
+{% if epica.tipo.value == 'epic' %}
     <div class="mt-4">
         <h3>Historias</h3>
         <a href="{{ url_for('epicas_bp.crear_historia', epica_id=epica.id) }}" class="btn btn-sm btn-primary mb-3">+ Nueva Historia</a>
 
-        {% set historias = epica.historias %}
+        {% set historias = epica.historias_hijas %}
         {% if historias %}
             <div class="list-group">
                 {% for historia in historias %}

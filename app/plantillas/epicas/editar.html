@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block titulo %}Editar Épica - {{ epica.nombre }}{% endblock %}
+
+{% block contenido %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h1>Editar Épica</h1>
+
+        <form method="POST" class="mt-4">
+            <div class="mb-3">
+                <label for="nombre" class="form-label">Nombre *</label>
+                <input type="text" class="form-control" id="nombre" name="nombre" value="{{ epica.nombre }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="descripcion" class="form-label">Descripción</label>
+                <textarea class="form-control" id="descripcion" name="descripcion" rows="4">{{ epica.descripcion or '' }}</textarea>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="prioridad" class="form-label">Prioridad</label>
+                        <select class="form-select" id="prioridad" name="prioridad">
+                            <option value="baja" {% if epica.prioridad.value == 'baja' %}selected{% endif %}>Baja</option>
+                            <option value="media" {% if epica.prioridad.value == 'media' %}selected{% endif %}>Media</option>
+                            <option value="alta" {% if epica.prioridad.value == 'alta' %}selected{% endif %}>Alta</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="estado" class="form-label">Estado</label>
+                        <select class="form-select" id="estado" name="estado">
+                            <option value="nuevo" {% if epica.estado.value == 'nuevo' %}selected{% endif %}>Nuevo</option>
+                            <option value="en_progreso" {% if epica.estado.value == 'en_progreso' %}selected{% endif %}>En Progreso</option>
+                            <option value="terminado" {% if epica.estado.value == 'terminado' %}selected{% endif %}>Terminado</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-warning"> Guardar Cambios</button>
+                <a href="{{ url_for('epicas_bp.detalle', epica_id=epica.id) }}" class="btn btn-secondary"> Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

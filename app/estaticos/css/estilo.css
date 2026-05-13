@@ -1,176 +1,343 @@
-/* Estilos generales de Mini Jira */
+/* Estilos generales de Mini Jira - Jira Style */
 
 :root {
-    --color-primary: #0d6efd;
-    --color-secondary: #6c757d;
-    --color-success: #198754;
-    --color-warning: #ffc107;
-    --color-danger: #dc3545;
-    --color-info: #0dcaf0;
+    --color-primary: #0052cc;
+    --color-secondary: #626f86;
+    --color-success: #216e4e;
+    --color-warning: #974f0c;
+    --color-danger: #ae2a19;
+    --color-info: #0055cc;
+    --jira-border: #dfe1e6;
 }
 
 * {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+}
+
+html, body {
+    height: 100%;
 }
 
 body {
-    background-color: #f8f9fa;
-    color: #212529;
+    background-color: #f7f8f9;
+    color: #172b4d;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Navbar */
 .navbar {
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);
+    background-color: #ffffff;
+    border-bottom: 1px solid var(--jira-border);
 }
 
 .navbar-brand {
-    font-size: 1.5rem;
-    font-weight: 600;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-primary) !important;
+}
+
+.navbar-dark .navbar-nav .nav-link {
+    color: #626f86 !important;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.navbar-dark .navbar-nav .nav-link:hover {
+    color: var(--color-primary) !important;
+}
+
+/* Main Content */
+main {
+    flex: 1;
+    padding: 1.5rem 0;
 }
 
 /* Cards */
 .card {
-    border: none;
-    border-radius: 8px;
-    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid var(--jira-border);
+    border-radius: 3px;
+    box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);
+    transition: box-shadow 0.2s;
 }
 
 .card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 8px rgba(9, 30, 66, 0.13);
 }
 
 .card-header {
-    border-bottom: 2px solid #e9ecef;
-    border-radius: 8px 8px 0 0;
+    border-bottom: 1px solid var(--jira-border);
+    background-color: #f7f8f9;
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    color: #172b4d;
 }
 
 /* Botones */
 .btn {
-    border-radius: 6px;
+    border-radius: 3px;
     font-weight: 500;
-    transition: all 0.3s;
+    font-size: 0.875rem;
+    border: 1px solid var(--jira-border);
 }
 
 .btn-primary {
     background-color: var(--color-primary);
     border-color: var(--color-primary);
+    color: #ffffff;
 }
 
 .btn-primary:hover {
-    background-color: #0b5ed7;
-    border-color: #0b5ed7;
+    background-color: #0052cc;
+    border-color: #0052cc;
+}
+
+.btn-warning {
+    background-color: #974f0c;
+    border-color: #974f0c;
+    color: #ffffff;
+}
+
+.btn-warning:hover {
+    background-color: #7d3f05;
+    border-color: #7d3f05;
+}
+
+.btn-danger {
+    background-color: #ae2a19;
+    border-color: #ae2a19;
+    color: #ffffff;
+}
+
+.btn-danger:hover {
+    background-color: #8c1f14;
+    border-color: #8c1f14;
+}
+
+.btn-secondary {
+    background-color: #f7f8f9;
+    border-color: var(--jira-border);
+    color: #172b4d;
+}
+
+.btn-secondary:hover {
+    background-color: #e2e7ed;
+}
+
+.btn-success {
+    background-color: #216e4e;
+    border-color: #216e4e;
+    color: #ffffff;
+}
+
+.btn-success:hover {
+    background-color: #1b5e42;
+}
+
+.btn-outline-primary {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--color-primary);
+    color: #ffffff;
+}
+
+.btn-outline-secondary {
+    color: #626f86;
+    border-color: var(--jira-border);
+}
+
+.btn-outline-secondary:hover {
+    background-color: #f7f8f9;
+    border-color: #626f86;
 }
 
 /* Badges */
 .badge {
-    border-radius: 4px;
-    font-size: 0.85rem;
-    padding: 0.4rem 0.6rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    font-weight: 500;
+}
+
+.bg-info {
+    background-color: #dffcf0 !important;
+    color: #216e4e !important;
+}
+
+.bg-warning {
+    background-color: #fff7d6 !important;
+    color: #974f0c !important;
+}
+
+.bg-danger {
+    background-color: #ffeceb !important;
+    color: #ae2a19 !important;
+}
+
+.bg-secondary {
+    background-color: #f1f2f4 !important;
+    color: #626f86 !important;
 }
 
 /* Tablas */
 .table {
     margin-bottom: 0;
-    border-radius: 8px;
+    border-radius: 3px;
     overflow: hidden;
+    background-color: #ffffff;
 }
 
 .table thead {
-    background-color: #212529;
+    background-color: #f7f8f9;
+    border-bottom: 1px solid var(--jira-border);
+}
+
+.table thead th {
+    color: #626f86;
+    font-weight: 600;
+    font-size: 0.875rem;
+    padding: 0.75rem 1rem;
 }
 
 .table-striped tbody tr:nth-of-type(odd) {
-    background-color: rgba(0, 0, 0, 0.02);
+    background-color: #ffffff;
 }
 
 .table-hover tbody tr:hover {
-    background-color: rgba(13, 110, 253, 0.1);
+    background-color: #f7f8f9;
+}
+
+.table tbody td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--jira-border);
 }
 
 /* Formularios */
 .form-control,
 .form-select {
-    border: 1px solid #dee2e6;
-    border-radius: 6px;
-    transition: border-color 0.3s, box-shadow 0.3s;
+    border: 1px solid var(--jira-border);
+    border-radius: 3px;
+    font-size: 0.875rem;
+    transition: border-color 0.2s;
+    background-color: #ffffff;
+    color: #172b4d;
 }
 
 .form-control:focus,
 .form-select:focus {
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    box-shadow: 0 0 0 2px rgba(0, 82, 204, 0.1);
+    outline: none;
 }
 
 .form-label {
     font-weight: 500;
-    color: #212529;
+    color: #172b4d;
     margin-bottom: 0.5rem;
+    font-size: 0.875rem;
 }
 
 /* Alertas */
 .alert {
-    border: none;
-    border-radius: 8px;
-    border-left: 4px solid;
+    border-radius: 3px;
+    border-left: 3px solid;
+    margin-bottom: 1rem;
 }
 
 .alert-success {
     border-left-color: var(--color-success);
-    background-color: rgba(25, 135, 84, 0.1);
+    background-color: #dffcf0;
+    color: #216e4e;
 }
 
 .alert-danger {
     border-left-color: var(--color-danger);
-    background-color: rgba(220, 53, 69, 0.1);
+    background-color: #ffeceb;
+    color: #ae2a19;
 }
 
 .alert-warning {
     border-left-color: var(--color-warning);
-    background-color: rgba(255, 193, 7, 0.1);
+    background-color: #fff7d6;
+    color: #974f0c;
 }
 
 .alert-info {
     border-left-color: var(--color-info);
-    background-color: rgba(13, 202, 240, 0.1);
+    background-color: #e7f4ff;
+    color: #0055cc;
 }
 
 /* Tabs */
+.nav-tabs {
+    border-bottom: 2px solid var(--jira-border);
+}
+
 .nav-tabs .nav-link {
-    color: #6c757d;
-    border-bottom: 2px solid transparent;
+    color: #626f86;
+    border: none;
+    border-bottom: 3px solid transparent;
     font-weight: 500;
-    transition: all 0.3s;
+    font-size: 0.875rem;
 }
 
 .nav-tabs .nav-link:hover {
-    border-bottom-color: var(--color-primary);
-    color: var(--color-primary);
+    border-bottom-color: var(--jira-border);
+    color: #172b4d;
 }
 
 .nav-tabs .nav-link.active {
     color: var(--color-primary);
-    background-color: transparent;
     border-bottom-color: var(--color-primary);
+    background-color: transparent;
 }
 
 /* Listas */
 .list-group-item {
-    border: 1px solid #dee2e6;
-    border-radius: 6px;
+    border: 1px solid var(--jira-border);
+    border-radius: 3px;
     margin-bottom: 0.5rem;
-    transition: all 0.3s;
+    transition: all 0.2s;
 }
 
 .list-group-item:hover {
-    background-color: rgba(13, 110, 253, 0.05);
+    background-color: #f7f8f9;
     border-color: var(--color-primary);
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+    color: #172b4d;
+    font-weight: 600;
+}
+
+h1 {
+    font-size: 1.75rem;
+    margin-bottom: 1.5rem;
+}
+
+h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
 }
 
 /* Footer */
 footer {
     margin-top: auto;
-    border-top: 1px solid #dee2e6;
+    border-top: 1px solid var(--jira-border);
+    background-color: #f7f8f9;
+    padding: 2rem 0;
+    color: #626f86;
+    font-size: 0.875rem;
 }
 
 /* Utilidades */
@@ -196,16 +363,20 @@ footer {
     }
 
     .navbar-brand {
-        font-size: 1.2rem;
+        font-size: 1rem;
+    }
+
+    h1 {
+        font-size: 1.5rem;
     }
 
     .table {
-        font-size: 0.9rem;
+        font-size: 0.8rem;
     }
 
     .btn {
-        padding: 0.4rem 0.8rem;
-        font-size: 0.9rem;
+        padding: 0.4rem 0.75rem;
+        font-size: 0.8rem;
     }
 }
 

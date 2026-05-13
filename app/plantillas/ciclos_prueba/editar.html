@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block titulo %}Editar Ciclo de Prueba - {{ ciclo.nombre }}{% endblock %}
+
+{% block contenido %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h1>Editar Ciclo de Prueba</h1>
+
+        <form method="POST" class="mt-4">
+            <div class="mb-3">
+                <label for="nombre" class="form-label">Nombre del Ciclo *</label>
+                <input type="text" class="form-control" id="nombre" name="nombre" value="{{ ciclo.nombre }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="descripcion" class="form-label">Descripción</label>
+                <textarea class="form-control" id="descripcion" name="descripcion" rows="4">{{ ciclo.descripcion or '' }}</textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="estado" class="form-label">Estado</label>
+                <select class="form-select" id="estado" name="estado">
+                    <option value="nuevo" {% if ciclo.estado.value == 'nuevo' %}selected{% endif %}>Nuevo</option>
+                    <option value="en_progreso" {% if ciclo.estado.value == 'en_progreso' %}selected{% endif %}>En Progreso</option>
+                    <option value="terminado" {% if ciclo.estado.value == 'terminado' %}selected{% endif %}>Terminado</option>
+                </select>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-warning"> Guardar Cambios</button>
+                <a href="{{ url_for('ciclos_prueba_bp.detalle', ciclo_id=ciclo.id) }}" class="btn btn-secondary"> Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

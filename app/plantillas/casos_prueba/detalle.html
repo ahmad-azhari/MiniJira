@@ -14,9 +14,9 @@
         </div>
     </div>
     <div class="col-md-4 text-end">
-        <a href="{{ url_for('casos_prueba_bp.editar', caso_id=caso.id) }}" class="btn btn-warning">✏️ Editar</a>
+        <a href="{{ url_for('casos_prueba_bp.editar', caso_id=caso.id) }}" class="btn btn-warning"> Editar</a>
         <form method="POST" action="{{ url_for('casos_prueba_bp.eliminar', caso_id=caso.id) }}" style="display:inline;">
-            <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro?')">🗑️ Eliminar</button>
+            <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro?')"> Eliminar</button>
         </form>
     </div>
 </div>
@@ -35,7 +35,7 @@
 
         <h5>Información</h5>
         <p>
-            <strong>Creado por:</strong> {{ caso.usuario_creacion.nombre_usuario }}<br>
+            <strong>Creado por:</strong> {{ caso.creado_por.nombre_usuario }}<br>
             <strong>Fecha:</strong> {{ caso.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}
         </p>
     </div>
@@ -45,6 +45,6 @@
     <h5>Resultados de Ejecución</h5>
     <a href="{{ url_for('resultados_bp.crear', caso_id=caso.id) }}" class="btn btn-sm btn-success mb-3">+ Registrar Resultado</a>
 
-    <a href="{{ url_for('defectos_bp.crear', caso_id=caso.id) }}" class="btn btn-sm btn-danger mb-3">🐛 Reportar Defecto</a>
+    <a href="{{ url_for('defectos_bp.crear', caso_id=caso.id) }}" class="btn btn-sm btn-danger mb-3"> Reportar Defecto</a>
 </div>
 {% endblock %}

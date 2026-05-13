@@ -7,7 +7,7 @@
     <div class="col-md-8 offset-md-2">
         <div class="card">
             <div class="card-header bg-warning text-dark">
-                <h4 class="mb-0">✏️ Editar Usuario: {{ usuario.nombre_usuario }}</h4>
+                <h4 class="mb-0"> Editar Usuario: {{ usuario.nombre_usuario }}</h4>
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('usuarios_bp.editar', usuario_id=usuario.id) }}">
@@ -43,8 +43,8 @@
                     {% endif %}
 
                     <div class="mt-4">
-                        <button type="submit" class="btn btn-warning">💾 Guardar Cambios</button>
-                        <a href="{{ url_for('usuarios_bp.perfil', usuario_id=usuario.id) }}" class="btn btn-secondary">← Cancelar</a>
+                        <button type="submit" class="btn btn-warning"> Guardar Cambios</button>
+                        <a href="{{ url_for('usuarios_bp.perfil', usuario_id=usuario.id) }}" class="btn btn-secondary"> Cancelar</a>
                     </div>
                 </form>
             </div>

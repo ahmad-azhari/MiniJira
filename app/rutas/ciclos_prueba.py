@@ -28,7 +28,10 @@ def indice():
 @requerir_autenticacion
 def detalle(ciclo_id):
     ciclo = CicloPrueba.query.get_or_404(ciclo_id)
-    return render_template('ciclos_prueba/detalle.html', ciclo=ciclo)
+    casos_disponibles = CasoPrueba.query.filter(
+        ~CasoPrueba.ciclos_prueba.any(CicloPrueba.id == ciclo_id)
+    ).all()
+    return render_template('ciclos_prueba/detalle.html', ciclo=ciclo, casos_disponibles=casos_disponibles)
 
 
 @ciclos_prueba_bp.route('/nuevo', methods=['GET', 'POST'])

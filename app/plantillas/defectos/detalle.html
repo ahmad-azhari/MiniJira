@@ -13,32 +13,22 @@
         </div>
     </div>
     <div class="col-md-4 text-end">
-        <a href="{{ url_for('defectos_bp.editar', defecto_id=defecto.id) }}" class="btn btn-warning">✏️ Editar</a>
+        <a href="{{ url_for('defectos_bp.editar', defecto_id=defecto.id) }}" class="btn btn-warning"> Editar</a>
         <form method="POST" action="{{ url_for('defectos_bp.eliminar', defecto_id=defecto.id) }}" style="display:inline;">
-            <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro?')">🗑️ Eliminar</button>
+            <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro?')"> Eliminar</button>
         </form>
     </div>
 </div>
 
 <div class="row mt-4">
-    <div class="col-md-6">
+    <div class="col-md-12">
         <h5>Descripción</h5>
         <p>{{ defecto.descripcion }}</p>
 
-        <h5>Pasos para Reproducir</h5>
-        <pre>{{ defecto.pasos_reproduccion or 'N/A' }}</pre>
-    </div>
-    <div class="col-md-6">
-        <h5>Resultado Esperado</h5>
-        <p>{{ defecto.resultado_esperado or 'N/A' }}</p>
-
-        <h5>Resultado Actual</h5>
-        <p>{{ defecto.resultado_actual or 'N/A' }}</p>
-
         <h5>Información</h5>
         <p>
-            <strong>Reportado por:</strong> {{ defecto.usuario_reporte.nombre_usuario }}<br>
-            <strong>Asignado a:</strong> {{ defecto.usuario_asignado.nombre_usuario if defecto.usuario_asignado else 'Sin asignar' }}<br>
+            <strong>Reportado por:</strong> {{ defecto.creado_por.nombre_usuario }}<br>
+            <strong>Asignado a:</strong> {{ defecto.asignado_a.nombre_usuario if defecto.asignado_a else 'Sin asignar' }}<br>
             <strong>Fecha:</strong> {{ defecto.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}
         </p>
     </div>

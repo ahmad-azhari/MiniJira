@@ -12,9 +12,9 @@
         </div>
     </div>
     <div class="col-md-4 text-end">
-        <a href="{{ url_for('ciclos_prueba_bp.editar', ciclo_id=ciclo.id) }}" class="btn btn-warning">✏️ Editar</a>
+        <a href="{{ url_for('ciclos_prueba_bp.editar', ciclo_id=ciclo.id) }}" class="btn btn-warning"> Editar</a>
         <form method="POST" action="{{ url_for('ciclos_prueba_bp.eliminar', ciclo_id=ciclo.id) }}" style="display:inline;">
-            <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro?')">🗑️ Eliminar</button>
+            <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro?')"> Eliminar</button>
         </form>
     </div>
 </div>

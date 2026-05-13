@@ -1,11 +1,12 @@
 {% extends "base.html" %}
 
-{% block titulo %}Crear Épica - Mini Jira{% endblock %}
+{% block titulo %}Crear Historia - Mini Jira{% endblock %}
 
 {% block contenido %}
 <div class="row justify-content-center">
     <div class="col-md-8">
-        <h1>Crear Nueva Épica</h1>
+        <h1>Crear Nueva Historia</h1>
+        <p class="text-muted">Épica: <strong>{{ epica.nombre }}</strong></p>
 
         <form method="POST" class="mt-4">
             <div class="mb-3">
@@ -28,8 +29,8 @@
             </div>
 
             <div class="mt-4">
-                <button type="submit" class="btn btn-primary">Crear Épica</button>
-                <a href="{{ url_for('proyectos_bp.detalle', proyecto_id=proyecto.id) }}" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-primary"> Crear Historia</button>
+                <a href="{{ url_for('epicas_bp.detalle', epica_id=epica.id) }}" class="btn btn-secondary"> Cancelar</a>
             </div>
         </form>
     </div>

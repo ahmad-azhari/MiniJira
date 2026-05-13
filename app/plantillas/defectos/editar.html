@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block titulo %}Editar Defecto - {{ defecto.titulo }}{% endblock %}
+
+{% block contenido %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h1>Editar Defecto</h1>
+
+        <form method="POST" class="mt-4">
+            <div class="mb-3">
+                <label for="titulo" class="form-label">Título *</label>
+                <input type="text" class="form-control" id="titulo" name="titulo" value="{{ defecto.titulo }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="descripcion" class="form-label">Descripción *</label>
+                <textarea class="form-control" id="descripcion" name="descripcion" rows="4" required>{{ defecto.descripcion }}</textarea>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="prioridad" class="form-label">Prioridad</label>
+                        <select class="form-select" id="prioridad" name="prioridad">
+                            <option value="baja" {% if defecto.prioridad.value == 'baja' %}selected{% endif %}>Baja</option>
+                            <option value="media" {% if defecto.prioridad.value == 'media' %}selected{% endif %}>Media</option>
+                            <option value="alta" {% if defecto.prioridad.value == 'alta' %}selected{% endif %}>Alta</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="estado" class="form-label">Estado</label>
+                        <select class="form-select" id="estado" name="estado">
+                            <option value="abierto" {% if defecto.estado.value == 'abierto' %}selected{% endif %}>Abierto</option>
+                            <option value="en_progreso" {% if defecto.estado.value == 'en_progreso' %}selected{% endif %}>En Progreso</option>
+                            <option value="cerrado" {% if defecto.estado.value == 'cerrado' %}selected{% endif %}>Cerrado</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="usuario_asignado_id" class="form-label">Asignado a</label>
+                        <select class="form-select" id="usuario_asignado_id" name="usuario_asignado_id">
+                            <option value="">-- Sin asignar --</option>
+                            {% for usuario in usuarios %}
+                                <option value="{{ usuario.id }}" {% if defecto.usuario_asignado_id == usuario.id %}selected{% endif %}>{{ usuario.nombre_usuario }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-warning"> Guardar Cambios</button>
+                <a href="{{ url_for('defectos_bp.detalle', defecto_id=defecto.id) }}" class="btn btn-secondary"> Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

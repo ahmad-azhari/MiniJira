@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block titulo %}Registrar Resultado - {{ caso.nombre }}{% endblock %}
+
+{% block contenido %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h1>Registrar Resultado</h1>
+        <p class="text-muted">Caso: <strong>{{ caso.nombre }}</strong></p>
+
+        <form method="POST" class="mt-4">
+            <div class="mb-3">
+                <label for="ciclo_id" class="form-label">Ciclo de Prueba *</label>
+                <select class="form-select" id="ciclo_id" name="ciclo_id" required>
+                    <option value="">-- Seleccionar --</option>
+                    {% for ciclo in ciclos %}
+                        <option value="{{ ciclo.id }}">{{ ciclo.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="estado" class="form-label">Estado de la Ejecución *</label>
+                <select class="form-select" id="estado" name="estado" required>
+                    <option value="pasado" selected>Pasado</option>
+                    <option value="fallido">Fallido</option>
+                    <option value="bloqueado">Bloqueado</option>
+                    <option value="en_progreso">En Progreso</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="entorno" class="form-label">Entorno</label>
+                <input type="text" class="form-control" id="entorno" name="entorno" placeholder="ej: Windows 10, Chrome">
+            </div>
+
+            <div class="mb-3">
+                <label for="resultado_obtenido" class="form-label">Resultado Obtenido</label>
+                <textarea class="form-control" id="resultado_obtenido" name="resultado_obtenido" rows="3"></textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="notas" class="form-label">Notas</label>
+                <textarea class="form-control" id="notas" name="notas" rows="3"></textarea>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-success"> Registrar Resultado</button>
+                <a href="{{ url_for('casos_prueba_bp.detalle', caso_id=caso.id) }}" class="btn btn-secondary"> Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

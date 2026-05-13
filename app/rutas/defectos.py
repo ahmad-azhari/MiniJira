@@ -41,11 +41,8 @@ def crear(caso_id):
     if request.method == 'POST':
         titulo = request.form.get('titulo', '').strip()
         descripcion = request.form.get('descripcion', '').strip()
-        pasos_reproduccion = request.form.get('pasos_reproduccion', '').strip()
-        resultado_esperado = request.form.get('resultado_esperado', '').strip()
-        resultado_actual = request.form.get('resultado_actual', '').strip()
         prioridad = request.form.get('prioridad', PrioridadEnum.MEDIA.value)
-        asignado_a_id = request.form.get('asignado_a_id')
+        asignado_a_id = request.form.get('usuario_asignado_id')
 
         if not titulo or not descripcion:
             flash('Título y descripción son obligatorios.', 'danger')
@@ -54,14 +51,11 @@ def crear(caso_id):
         defecto = Defecto(
             titulo=titulo,
             descripcion=descripcion,
-            pasos_reproduccion=pasos_reproduccion,
-            resultado_esperado=resultado_esperado,
-            resultado_actual=resultado_actual,
             prioridad=PrioridadEnum(prioridad),
-            estado=EstadoDefectoEnum.NUEVO,
+            estado=EstadoDefectoEnum.ABIERTO,
             caso_prueba_id=caso_id,
-            reportado_por_id=usuario_id,
-            asignado_a_id=asignado_a_id if asignado_a_id else None
+            usuario_creacion_id=usuario_id,
+            usuario_asignado_id=asignado_a_id if asignado_a_id else None
         )
         db.session.add(defecto)
         db.session.commit()
@@ -81,9 +75,6 @@ def editar(defecto_id):
     if request.method == 'POST':
         defecto.titulo = request.form.get('titulo', defecto.titulo).strip()
         defecto.descripcion = request.form.get('descripcion', defecto.descripcion).strip()
-        defecto.pasos_reproduccion = request.form.get('pasos_reproduccion', defecto.pasos_reproduccion).strip()
-        defecto.resultado_esperado = request.form.get('resultado_esperado', defecto.resultado_esperado).strip()
-        defecto.resultado_actual = request.form.get('resultado_actual', defecto.resultado_actual).strip()
         defecto.prioridad = PrioridadEnum(request.form.get('prioridad', defecto.prioridad.value))
 
         nuevo_estado = EstadoDefectoEnum(request.form.get('estado', defecto.estado.value))
@@ -92,8 +83,8 @@ def editar(defecto_id):
             return redirect(url_for('defectos_bp.editar', defecto_id=defecto_id))
 
         defecto.estado = nuevo_estado
-        asignado_a_id = request.form.get('asignado_a_id')
-        defecto.asignado_a_id = asignado_a_id if asignado_a_id else None
+        asignado_a_id = request.form.get('usuario_asignado_id')
+        defecto.usuario_asignado_id = asignado_a_id if asignado_a_id else None
 
         db.session.commit()
 

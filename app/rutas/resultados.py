@@ -39,15 +39,23 @@ def crear(caso_id):
 
     if request.method == 'POST':
         estado = request.form.get('estado', EstadoResultadoEnum.PASADO.value)
-        observaciones = request.form.get('observaciones', '').strip()
+        notas = request.form.get('notas', '').strip()
         ciclo_id = request.form.get('ciclo_id')
+        entorno = request.form.get('entorno', '').strip()
+        resultado_obtenido = request.form.get('resultado_obtenido', '').strip()
+
+        if not ciclo_id:
+            flash('Debe seleccionar un ciclo de prueba.', 'danger')
+            return redirect(url_for('resultados_bp.crear', caso_id=caso_id))
 
         resultado = Resultado(
             caso_prueba_id=caso_id,
+            ciclo_prueba_id=ciclo_id,
             estado=EstadoResultadoEnum(estado),
-            observaciones=observaciones,
-            usuario_ejecucion_id=usuario_id,
-            ciclo_prueba_id=ciclo_id if ciclo_id else None
+            notas=notas,
+            entorno=entorno,
+            resultado_obtenido=resultado_obtenido,
+            usuario_creacion_id=usuario_id
         )
         db.session.add(resultado)
         db.session.commit()
@@ -66,7 +74,7 @@ def editar(resultado_id):
 
     if request.method == 'POST':
         resultado.estado = EstadoResultadoEnum(request.form.get('estado', resultado.estado.value))
-        resultado.observaciones = request.form.get('observaciones', resultado.observaciones).strip()
+        resultado.notas = request.form.get('notas', resultado.notas).strip()
         db.session.commit()
 
         flash('Resultado actualizado exitosamente.', 'success')

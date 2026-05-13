@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block titulo %}Resultados de Prueba - Mini Jira{% endblock %}
+
+{% block contenido %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h1>Resultados de Prueba</h1>
+    </div>
+</div>
+
+{% if resultados %}
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead >
+                <tr>
+                    <th>Caso de Prueba</th>
+                    <th>Ciclo</th>
+                    <th>Estado</th>
+                    <th>Entorno</th>
+                    <th>Fecha</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for resultado in resultados %}
+                    <tr>
+                        <td><strong>{{ resultado.caso_prueba.nombre }}</strong></td>
+                        <td>{{ resultado.ciclo_prueba.nombre }}</td>
+                        <td>
+                            <span class="badge bg-{% if resultado.estado.value == 'pasado' %}success{% elif resultado.estado.value == 'fallido' %}danger{% elif resultado.estado.value == 'bloqueado' %}warning{% else %}info{% endif %}">
+                                {{ resultado.estado.value }}
+                            </span>
+                        </td>
+                        <td>{{ resultado.entorno or 'N/A' }}</td>
+                        <td>{{ resultado.fecha_creacion.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            <a href="{{ url_for('resultados_bp.detalle', resultado_id=resultado.id) }}" class="btn btn-sm btn-outline-primary">Ver</a>
+                            <a href="{{ url_for('resultados_bp.editar', resultado_id=resultado.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="alert alert-info">No hay resultados de prueba aún.</div>
+{% endif %}
+{% endblock %}

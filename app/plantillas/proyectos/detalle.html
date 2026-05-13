@@ -9,9 +9,9 @@
         <p class="text-muted">{{ proyecto.descripcion }}</p>
     </div>
     <div class="col-md-4 text-end">
-        <a href="{{ url_for('proyectos_bp.editar', proyecto_id=proyecto.id) }}" class="btn btn-warning">✏️ Editar</a>
+        <a href="{{ url_for('proyectos_bp.editar', proyecto_id=proyecto.id) }}" class="btn btn-warning"> Editar</a>
         <form method="POST" action="{{ url_for('proyectos_bp.eliminar', proyecto_id=proyecto.id) }}" style="display:inline;">
-            <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro?')">🗑️ Eliminar</button>
+            <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro?')"> Eliminar</button>
         </form>
     </div>
 </div>

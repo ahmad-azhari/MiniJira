@@ -70,11 +70,11 @@
                 <div class="mt-4">
                     {% if session.usuario_id == usuario.id or 'admin' in session.get('roles', []) %}
                         <a href="{{ url_for('usuarios_bp.editar', usuario_id=usuario.id) }}" class="btn btn-warning">
-                            ✏️ Editar Perfil
+                             Editar Perfil
                         </a>
                     {% endif %}
                     <a href="{{ url_for('usuarios_bp.indice') }}" class="btn btn-secondary">
-                        ← Volver a Usuarios
+                         Volver a Usuarios
                     </a>
                 </div>
             </div>
