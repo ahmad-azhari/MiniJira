@@ -25,7 +25,7 @@ class TestingConfig(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = os.getenv(
         'DATABASE_TEST_URL',
-        'mysql+pymysql://root:@localhost/minijira_test'
+        'sqlite:///:memory:'
     )
 
 

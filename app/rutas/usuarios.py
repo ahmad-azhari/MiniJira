@@ -2,37 +2,9 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from app.base_datos import db
 from app.modelos import Usuario, Rol
 from config.constantes import RolEnum
-from functools import wraps
+from app.decoradores import requerir_autenticacion, requerir_miembro, requerir_admin
 
 usuarios_bp = Blueprint('usuarios_bp', __name__, url_prefix='/usuarios')
-
-
-def requerir_autenticacion(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if 'usuario_id' not in session:
-            flash('Debes iniciar sesión.', 'warning')
-            return redirect(url_for('auth_bp.login'))
-        return f(*args, **kwargs)
-    return wrapper
-
-
-def requerir_admin(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if 'usuario_id' not in session:
-            flash('Debes iniciar sesión.', 'warning')
-            return redirect(url_for('auth_bp.login'))
-
-        usuario_id = session.get('usuario_id')
-        usuario = Usuario.query.get(usuario_id)
-
-        if not usuario or not any(rol.nombre == RolEnum.ADMIN.value for rol in usuario.roles):
-            flash('No tienes permiso para acceder a esta sección.', 'danger')
-            return redirect(url_for('proyectos_bp.indice'))
-
-        return f(*args, **kwargs)
-    return wrapper
 
 
 @usuarios_bp.route('/')

@@ -6,6 +6,18 @@
 <div class="row mb-4">
     <div class="col-md-8">
         <h1>{{ epica.nombre }}</h1>
+        <div class="text-muted mb-2">
+            {% if epica.proyecto %}
+                Proyecto: <a href="{{ url_for('proyectos_bp.detalle', proyecto_id=epica.proyecto.id) }}" class="text-decoration-none fw-semibold text-primary">{{ epica.proyecto.nombre }}</a>
+            {% endif %}
+            {% if epica.tipo.value == 'story' %}
+                {% if epica.epica_padre %}
+                     | Épica: <a href="{{ url_for('epicas_bp.detalle', epica_id=epica.epica_padre.id) }}" class="text-decoration-none fw-semibold text-primary">{{ epica.epica_padre.nombre }}</a>
+                {% else %}
+                     | <span class="text-muted fw-semibold">Sin Épica Padre</span>
+                {% endif %}
+            {% endif %}
+        </div>
         <p class="text-muted">{{ epica.descripcion }}</p>
         <div class="mt-2">
             <span class="badge bg-secondary">{{ epica.estado.value }}</span>
@@ -14,17 +26,48 @@
         </div>
     </div>
     <div class="col-md-4 text-end">
+        {% if 'miembro' in session.get('roles', []) %}
         <a href="{{ url_for('epicas_bp.editar', epica_id=epica.id) }}" class="btn btn-warning"> Editar</a>
-        <form method="POST" action="{{ url_for('epicas_bp.eliminar', epica_id=epica.id) }}" style="display:inline;">
-            <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro?')"> Eliminar</button>
-        </form>
+        {% endif %}
+        {% if 'admin' in session.get('roles', []) %}
+        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+            Eliminar
+        </button>
+
+        <!-- Delete Modal -->
+        <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+            <div class="modal-dialog text-start">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title" id="deleteModalLabel">Eliminar {{ 'Épica' if epica.tipo.value == 'epic' else 'Historia' }} Permanentemente</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-warning">
+                            <strong>¡Atención!</strong> Esta acción es irreversible. Se eliminarán permanentemente {% if epica.tipo.value == 'epic' %}todas las historias y {% endif %}las asociaciones de casos de prueba.
+                        </div>
+                        <p>Para confirmar, escribe <strong>ELIMINAR</strong> en el siguiente campo:</p>
+                        <input type="text" id="confirmDeleteInput" class="form-control" autocomplete="off">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <form method="POST" action="{{ url_for('epicas_bp.eliminar', epica_id=epica.id) }}" style="display:inline;">
+                            <button type="submit" id="confirmDeleteBtn" class="btn btn-danger" disabled>Eliminar Permanentemente</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 
 {% if epica.tipo.value == 'epic' %}
     <div class="mt-4">
         <h3>Historias</h3>
+        {% if 'miembro' in session.get('roles', []) %}
         <a href="{{ url_for('epicas_bp.crear_historia', epica_id=epica.id) }}" class="btn btn-sm btn-primary mb-3">Nueva Historia</a>
+        {% endif %}
 
         {% set historias = epica.historias_hijas %}
         {% if historias %}
@@ -46,6 +89,7 @@
     <h3>Casos de Prueba</h3>
 
     {% set casos_disponibles = epica.casos_prueba | list %}
+    {% if 'miembro' in session.get('roles', []) %}
     <form method="POST" action="{{ url_for('epicas_bp.agregar_caso_historia', historia_id=epica.id) }}" class="mb-3">
         <div class="row g-2">
             <div class="col-md-8">
@@ -63,6 +107,7 @@
             </div>
         </div>
     </form>
+    {% endif %}
 
     {% if epica.casos_prueba %}
         <div class="table-responsive">
@@ -83,9 +128,11 @@
                             <td><span class="badge bg-{% if caso.prioridad.value == 'alta' %}danger{% elif caso.prioridad.value == 'media' %}warning{% else %}success{% endif %}">{{ caso.prioridad.value }}</span></td>
                             <td>
                                 <a href="{{ url_for('casos_prueba_bp.detalle', caso_id=caso.id) }}" class="btn btn-sm btn-outline-primary">Ver</a>
+                                {% if 'miembro' in session.get('roles', []) %}
                                 <form method="POST" action="{{ url_for('epicas_bp.quitar_caso_historia', historia_id=epica.id, caso_id=caso.id) }}" style="display:inline;">
                                     <button type="submit" class="btn btn-sm btn-outline-danger">Remover</button>
                                 </form>
+                                {% endif %}
                             </td>
                         </tr>
                     {% endfor %}
@@ -103,4 +150,30 @@
         Última modificación: {{ epica.fecha_modificacion.strftime('%d/%m/%Y %H:%M') if epica.fecha_modificacion else 'N/A' }}
     </p>
 </div>
+{% endblock %}
+
+{% block scripts_adicionales %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const confirmInput = document.getElementById('confirmDeleteInput');
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        if (confirmInput && confirmBtn) {
+            confirmInput.addEventListener('input', function() {
+                if (this.value === 'ELIMINAR') {
+                    confirmBtn.removeAttribute('disabled');
+                } else {
+                    confirmBtn.setAttribute('disabled', 'true');
+                }
+            });
+            
+            const deleteModalEl = document.getElementById('deleteModal');
+            if (deleteModalEl) {
+                deleteModalEl.addEventListener('hidden.bs.modal', function () {
+                    confirmInput.value = '';
+                    confirmBtn.setAttribute('disabled', 'true');
+                });
+            }
+        }
+    });
+</script>
 {% endblock %}

@@ -8,7 +8,9 @@
         <h1>Gestión de Usuarios</h1>
     </div>
     <div class="col-md-4 text-end">
+        {% if 'admin' in session.get('roles', []) %}
         <a href="{{ url_for('usuarios_bp.crear') }}" class="btn btn-primary">Nuevo Usuario</a>
+        {% endif %}
     </div>
 </div>
 
@@ -43,7 +45,9 @@
                         </td>
                         <td>
                             <a href="{{ url_for('usuarios_bp.perfil', usuario_id=usuario.id) }}" class="btn btn-sm btn-outline-primary">Ver</a>
+                            {% if 'admin' in session.get('roles', []) %}
                             <a href="{{ url_for('usuarios_bp.editar', usuario_id=usuario.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                            {% endif %}
                             {% if usuario.activo %}
                                 <form method="POST" action="{{ url_for('usuarios_bp.desactivar', usuario_id=usuario.id) }}" style="display:inline;">
                                     <button type="submit" class="btn btn-sm btn-outline-warning" onclick="return confirm('¿Desactivar este usuario?')">Desactivar</button>
@@ -53,9 +57,11 @@
                                     <button type="submit" class="btn btn-sm btn-outline-success">Activar</button>
                                 </form>
                             {% endif %}
+                            {% if 'admin' in session.get('roles', []) %}
                             <form method="POST" action="{{ url_for('usuarios_bp.eliminar', usuario_id=usuario.id) }}" style="display:inline;">
                                 <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar permanentemente este usuario? Esta acción no se puede deshacer.')">Eliminar</button>
                             </form>
+                            {% endif %}
                         </td>
                     </tr>
                 {% endfor %}

@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, session
+from flask import Blueprint, render_template, session, request
 from app.modelos import (
     Proyecto, Epica, CasoPrueba, Resultado, Defecto,
     CicloPrueba, Usuario
@@ -66,7 +66,11 @@ def dashboard():
 @reportes_bp.route('/proyectos')
 @requerir_autenticacion
 def reporte_proyectos():
-    proyectos = Proyecto.query.all()
+    query = request.args.get('q', '').strip()
+    if query:
+        proyectos = Proyecto.query.filter(Proyecto.nombre.ilike(f'%{query}%')).all()
+    else:
+        proyectos = Proyecto.query.all()
 
     data = []
     for proyecto in proyectos:

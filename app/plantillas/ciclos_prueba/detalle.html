@@ -12,17 +12,48 @@
         </div>
     </div>
     <div class="col-md-4 text-end">
+        <a href="{{ url_for('ejecucion_bp.indice', ciclo_id=ciclo.id) }}" class="btn btn-success">Ejecutar Ciclo</a>
+        {% if 'miembro' in session.get('roles', []) %}
         <a href="{{ url_for('ciclos_prueba_bp.editar', ciclo_id=ciclo.id) }}" class="btn btn-warning"> Editar</a>
-        <form method="POST" action="{{ url_for('ciclos_prueba_bp.eliminar', ciclo_id=ciclo.id) }}" style="display:inline;">
-            <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro?')"> Eliminar</button>
-        </form>
+        {% endif %}
+        {% if 'admin' in session.get('roles', []) %}
+        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+            Eliminar
+        </button>
+
+        <!-- Delete Modal -->
+        <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+            <div class="modal-dialog text-start">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title" id="deleteModalLabel">Eliminar Ciclo Permanentemente</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-warning">
+                            <strong>¡Atención!</strong> Esta acción es irreversible. Se eliminará el ciclo de prueba, todas sus estadísticas y los resultados asociados.
+                        </div>
+                        <p>Para confirmar, escribe <strong>ELIMINAR</strong> en el siguiente campo:</p>
+                        <input type="text" id="confirmDeleteInput" class="form-control" autocomplete="off">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <form method="POST" action="{{ url_for('ciclos_prueba_bp.eliminar', ciclo_id=ciclo.id) }}" style="display:inline;">
+                            <button type="submit" id="confirmDeleteBtn" class="btn btn-danger" disabled>Eliminar Permanentemente</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 
 <div class="mt-4">
     <h3>Casos de Prueba ({{ ciclo.casos_prueba|length }})</h3>
 
-    <form method="POST" action="{{ url_for('ciclos_prueba_bp.agregar_caso', ciclo_id=ciclo.id) }}" class="mb-3">
+    {% if 'miembro' in session.get('roles', []) %}
+            <form method="POST" action="{{ url_for('ciclos_prueba_bp.agregar_caso', ciclo_id=ciclo.id) }}" class="mb-3">
         <div class="input-group">
             <select class="form-select" name="caso_id" required>
                 <option selected disabled>-- Seleccionar caso --</option>
@@ -33,6 +64,7 @@
             <button class="btn btn-outline-primary" type="submit">Agregar</button>
         </div>
     </form>
+            {% endif %}
 
     {% if ciclo.casos_prueba %}
         <div class="table-responsive">
@@ -53,9 +85,11 @@
                             <td><span class="badge bg-warning">{{ caso.prioridad.value }}</span></td>
                             <td>
                                 <a href="{{ url_for('casos_prueba_bp.detalle', caso_id=caso.id) }}" class="btn btn-sm btn-outline-primary">Ver</a>
+                                {% if 'miembro' in session.get('roles', []) %}
                                 <form method="POST" action="{{ url_for('ciclos_prueba_bp.quitar_caso', ciclo_id=ciclo.id, caso_id=caso.id) }}" style="display:inline;">
                                     <button type="submit" class="btn btn-sm btn-outline-danger">Quitar</button>
                                 </form>
+                                {% endif %}
                             </td>
                         </tr>
                     {% endfor %}
@@ -66,4 +100,30 @@
         <div class="alert alert-info">No hay casos en este ciclo.</div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block scripts_adicionales %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const confirmInput = document.getElementById('confirmDeleteInput');
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        if (confirmInput && confirmBtn) {
+            confirmInput.addEventListener('input', function() {
+                if (this.value === 'ELIMINAR') {
+                    confirmBtn.removeAttribute('disabled');
+                } else {
+                    confirmBtn.setAttribute('disabled', 'true');
+                }
+            });
+            
+            const deleteModalEl = document.getElementById('deleteModal');
+            if (deleteModalEl) {
+                deleteModalEl.addEventListener('hidden.bs.modal', function () {
+                    confirmInput.value = '';
+                    confirmBtn.setAttribute('disabled', 'true');
+                });
+            }
+        }
+    });
+</script>
 {% endblock %}

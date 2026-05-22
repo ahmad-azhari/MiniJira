@@ -14,10 +14,39 @@
         </div>
     </div>
     <div class="col-md-4 text-end">
+        {% if 'miembro' in session.get('roles', []) %}
         <a href="{{ url_for('casos_prueba_bp.editar', caso_id=caso.id) }}" class="btn btn-warning"> Editar</a>
-        <form method="POST" action="{{ url_for('casos_prueba_bp.eliminar', caso_id=caso.id) }}" style="display:inline;">
-            <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro?')"> Eliminar</button>
-        </form>
+        {% endif %}
+        {% if 'admin' in session.get('roles', []) %}
+        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+            Eliminar
+        </button>
+
+        <!-- Delete Modal -->
+        <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+            <div class="modal-dialog text-start">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title" id="deleteModalLabel">Eliminar Caso Permanentemente</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-warning">
+                            <strong>¡Atención!</strong> Esta acción es irreversible. Se eliminará el caso de prueba y cualquier asociación con épicas, historias y ciclos.
+                        </div>
+                        <p>Para confirmar, escribe <strong>ELIMINAR</strong> en el siguiente campo:</p>
+                        <input type="text" id="confirmDeleteInput" class="form-control" autocomplete="off">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <form method="POST" action="{{ url_for('casos_prueba_bp.eliminar', caso_id=caso.id) }}" style="display:inline;">
+                            <button type="submit" id="confirmDeleteBtn" class="btn btn-danger" disabled>Eliminar Permanentemente</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 
@@ -43,8 +72,38 @@
 
 <div class="mt-4">
     <h5>Resultados de Ejecución</h5>
+    {% if 'miembro' in session.get('roles', []) %}
     <a href="{{ url_for('resultados_bp.crear', caso_id=caso.id) }}" class="btn btn-sm btn-success mb-3">+ Registrar Resultado</a>
+    {% endif %}
 
+    {% if 'miembro' in session.get('roles', []) %}
     <a href="{{ url_for('defectos_bp.crear', caso_id=caso.id) }}" class="btn btn-sm btn-danger mb-3"> Reportar Defecto</a>
+    {% endif %}
 </div>
+{% endblock %}
+
+{% block scripts_adicionales %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const confirmInput = document.getElementById('confirmDeleteInput');
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        if (confirmInput && confirmBtn) {
+            confirmInput.addEventListener('input', function() {
+                if (this.value === 'ELIMINAR') {
+                    confirmBtn.removeAttribute('disabled');
+                } else {
+                    confirmBtn.setAttribute('disabled', 'true');
+                }
+            });
+            
+            const deleteModalEl = document.getElementById('deleteModal');
+            if (deleteModalEl) {
+                deleteModalEl.addEventListener('hidden.bs.modal', function () {
+                    confirmInput.value = '';
+                    confirmBtn.setAttribute('disabled', 'true');
+                });
+            }
+        }
+    });
+</script>
 {% endblock %}

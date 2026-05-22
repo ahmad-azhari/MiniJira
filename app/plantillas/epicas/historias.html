@@ -7,7 +7,19 @@
     <div class="col-md-8">
         <h1>Historias de Usuario</h1>
     </div>
+    <div class="col-md-4 text-end">
+        {% if 'miembro' in session.get('roles', []) %}
+        <a href="{{ url_for('epicas_bp.crear_historia_suelta') }}" class="btn btn-primary">Crear Historia</a>
+        {% endif %}
 </div>
+
+<form method="GET" class="d-flex mb-3">
+    <input class="form-control me-2" type="search" name="q" placeholder="Buscar historias por nombre..." value="{{ request.args.get('q', '') }}">
+    <button class="btn btn-outline-primary" type="submit">Buscar</button>
+    {% if request.args.get('q') %}
+        <a href="{{ request.path }}" class="btn btn-outline-secondary ms-2">Limpiar</a>
+    {% endif %}
+</form>
 
 {% if historias_con_epica %}
     <div class="table-responsive">

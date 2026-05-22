@@ -5,10 +5,12 @@
 {% block contenido %}
 <div class="row mb-4">
     <div class="col-md-8">
-        <h1>📁 Proyectos</h1>
+        <h1>Proyectos</h1>
     </div>
     <div class="col-md-4 text-end">
+        {% if 'miembro' in session.get('roles', []) %}
         <a href="{{ url_for('proyectos_bp.crear') }}" class="btn btn-primary">+ Nuevo Proyecto</a>
+        {% endif %}
     </div>
 </div>
 
@@ -26,7 +28,9 @@
                     </div>
                     <div class="card-footer bg-light">
                         <a href="{{ url_for('proyectos_bp.detalle', proyecto_id=proyecto.id) }}" class="btn btn-sm btn-outline-primary">Ver Detalle</a>
+                        {% if 'miembro' in session.get('roles', []) %}
                         <a href="{{ url_for('proyectos_bp.editar', proyecto_id=proyecto.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                        {% endif %}
                     </div>
                 </div>
             </div>

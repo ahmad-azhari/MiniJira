@@ -1,8 +1,8 @@
 import pytest
-from pruebas.paginas.login_page import LoginPage
-from pruebas.paginas.dashboard_page import DashboardPage
-from pruebas.paginas.detalle_proyecto_page import DetalleProyectoPage
-from pruebas.paginas.nuevo_proyecto_page import NuevoProyectoPage
+from pruebas.paginas.login import LoginPage
+from pruebas.paginas.dashboard import DashboardPage
+from pruebas.paginas.detalle_proyecto import DetalleProyectoPage
+from pruebas.paginas.nuevo_proyecto import NuevoProyectoPage
 
 @pytest.mark.selenium
 def test_crear_y_ver_detalle_proyecto(driver):

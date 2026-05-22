@@ -15,7 +15,7 @@ def requerir_autenticacion(f):
 
 
 def requerir_miembro(f):
-    """Solo ADMIN y MIEMBRO pueden acceder (creación/edición)"""
+    """Solo MIEMBRO puede acceder (creación/edición)"""
     @wraps(f)
     def wrapper(*args, **kwargs):
         if 'usuario_id' not in session:
@@ -23,8 +23,8 @@ def requerir_miembro(f):
             return redirect(url_for('auth_bp.login'))
 
         roles = session.get('roles', [])
-        if RolEnum.ADMIN.value not in roles and RolEnum.MIEMBRO.value not in roles:
-            flash('No tienes permiso para realizar esta acción.', 'danger')
+        if RolEnum.MIEMBRO.value not in roles:
+            flash('No tienes permiso para realizar esta acción. Requiere rol de Miembro.', 'danger')
             return redirect(url_for('proyectos_bp.indice'))
 
         return f(*args, **kwargs)

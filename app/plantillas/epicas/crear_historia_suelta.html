@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block titulo %}Nueva Historia - Mini Jira{% endblock %}
+
+{% block contenido %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>Crear Nueva Historia</h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label">Nombre de la Historia</label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="epica_id" class="form-label">Épica Padre (Opcional)</label>
+                        <select class="form-select" id="epica_id" name="epica_id">
+                            <option value="">Selecciona una épica...</option>
+                            {% for epica in epicas %}
+                                <option value="{{ epica.id }}" data-proyecto-id="{{ epica.proyecto_id }}">{{ epica.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div id="proyecto_container" class="mb-3">
+                        <label for="proyecto_id" class="form-label">Proyecto *</label>
+                        <select class="form-select" id="proyecto_id" name="proyecto_id">
+                            <option value="">Selecciona un proyecto...</option>
+                            {% for proyecto in proyectos %}
+                                <option value="{{ proyecto.id }}">{{ proyecto.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="descripcion" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="descripcion" name="descripcion" rows="4"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="prioridad" class="form-label">Prioridad</label>
+                        <select class="form-select" id="prioridad" name="prioridad">
+                            <option value="baja">Baja</option>
+                            <option value="media" selected>Media</option>
+                            <option value="alta">Alta</option>
+                        </select>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('epicas_bp.historias') }}" class="btn btn-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">Crear Historia</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts_adicionales %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const epicaSelect = document.getElementById('epica_id');
+    const proyectoSelect = document.getElementById('proyecto_id');
+    const proyectoLabel = document.querySelector('label[for="proyecto_id"]');
+
+    function updateProjectSelection() {
+        const selectedOption = epicaSelect.options[epicaSelect.selectedIndex];
+        const epicProyectoId = selectedOption ? selectedOption.getAttribute('data-proyecto-id') : null;
+
+        if (epicProyectoId) {
+            proyectoSelect.value = epicProyectoId;
+            proyectoSelect.disabled = true;
+            let hiddenInput = document.getElementById('hidden_proyecto_id');
+            if (!hiddenInput) {
+                hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.id = 'hidden_proyecto_id';
+                hiddenInput.name = 'proyecto_id';
+                proyectoSelect.parentNode.appendChild(hiddenInput);
+            }
+            hiddenInput.value = epicProyectoId;
+            proyectoLabel.innerHTML = 'Proyecto (determinado por la épica)';
+            proyectoSelect.removeAttribute('required');
+        } else {
+            proyectoSelect.disabled = false;
+            const hiddenInput = document.getElementById('hidden_proyecto_id');
+            if (hiddenInput) {
+                hiddenInput.remove();
+            }
+            proyectoLabel.innerHTML = 'Proyecto *';
+            proyectoSelect.setAttribute('required', 'required');
+            if (proyectoSelect.dataset.manualSelect === 'true') {
+                proyectoSelect.value = proyectoSelect.dataset.lastManualValue || '';
+            } else {
+                proyectoSelect.value = '';
+            }
+        }
+    }
+
+    proyectoSelect.addEventListener('change', function() {
+        proyectoSelect.dataset.manualSelect = 'true';
+        proyectoSelect.dataset.lastManualValue = proyectoSelect.value;
+    });
+
+    epicaSelect.addEventListener('change', updateProjectSelection);
+    updateProjectSelection();
+});
+</script>
+{% endblock %}

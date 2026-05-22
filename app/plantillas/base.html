@@ -34,6 +34,9 @@
                             <a class="nav-link" href="{{ url_for('ciclos_prueba_bp.indice') }}">Ciclos</a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('ejecucion_bp.indice') }}">Ejecución</a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('defectos_bp.indice') }}">Defectos</a>
                         </li>
                         <li class="nav-item">
@@ -65,16 +68,18 @@
     </nav>
 
     <main class="container-fluid">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{% if category == 'danger' %}danger{% elif category == 'warning' %}warning{% elif category == 'info' %}info{% else %}success{% endif %} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1055;">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{% if category == 'danger' %}danger{% elif category == 'warning' %}warning{% elif category == 'info' %}info{% else %}success{% endif %} alert-dismissible fade show shadow" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
 
         {% block contenido %}{% endblock %}
     </main>

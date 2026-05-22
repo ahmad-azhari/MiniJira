@@ -8,9 +8,18 @@
         <h1>Épicas</h1>
     </div>
     <div class="col-md-4 text-end">
+        {% if 'miembro' in session.get('roles', []) %}
         <a href="{{ url_for('proyectos_bp.indice') }}" class="btn btn-primary">Crear Épica</a>
-    </div>
+        {% endif %}
 </div>
+
+<form method="GET" class="d-flex mb-3">
+    <input class="form-control me-2" type="search" name="q" placeholder="Buscar épicas por nombre..." value="{{ request.args.get('q', '') }}">
+    <button class="btn btn-outline-primary" type="submit">Buscar</button>
+    {% if request.args.get('q') %}
+        <a href="{{ request.path }}" class="btn btn-outline-secondary ms-2">Limpiar</a>
+    {% endif %}
+</form>
 
 {% if epicas_con_proyecto %}
     <div class="table-responsive">

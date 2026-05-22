@@ -36,7 +36,9 @@
                         <td>{{ resultado.fecha_creacion.strftime('%d/%m/%Y') }}</td>
                         <td>
                             <a href="{{ url_for('resultados_bp.detalle', resultado_id=resultado.id) }}" class="btn btn-sm btn-outline-primary">Ver</a>
+                            {% if 'miembro' in session.get('roles', []) %}
                             <a href="{{ url_for('resultados_bp.editar', resultado_id=resultado.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                            {% endif %}
                         </td>
                     </tr>
                 {% endfor %}

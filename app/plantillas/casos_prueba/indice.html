@@ -8,9 +8,18 @@
         <h1>Casos de Prueba</h1>
     </div>
     <div class="col-md-4 text-end">
+        {% if 'miembro' in session.get('roles', []) %}
         <a href="{{ url_for('casos_prueba_bp.crear') }}" class="btn btn-primary">+ Nuevo Caso</a>
-    </div>
+        {% endif %}
 </div>
+
+<form method="GET" class="d-flex mb-3">
+    <input class="form-control me-2" type="search" name="q" placeholder="Buscar casos por nombre..." value="{{ request.args.get('q', '') }}">
+    <button class="btn btn-outline-primary" type="submit">Buscar</button>
+    {% if request.args.get('q') %}
+        <a href="{{ request.path }}" class="btn btn-outline-secondary ms-2">Limpiar</a>
+    {% endif %}
+</form>
 
 {% if casos %}
     <div class="table-responsive">
@@ -39,7 +48,9 @@
                         <td><span class="badge bg-secondary">{{ caso.estado.value }}</span></td>
                         <td>
                             <a href="{{ url_for('casos_prueba_bp.detalle', caso_id=caso.id) }}" class="btn btn-sm btn-outline-primary">Ver</a>
+                            {% if 'miembro' in session.get('roles', []) %}
                             <a href="{{ url_for('casos_prueba_bp.editar', caso_id=caso.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                            {% endif %}
                         </td>
                     </tr>
                 {% endfor %}

@@ -2,25 +2,19 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from app.base_datos import db
 from app.modelos import Defecto, CasoPrueba, Usuario
 from config.constantes import EstadoDefectoEnum, PrioridadEnum
-from functools import wraps
+from app.decoradores import requerir_autenticacion, requerir_miembro, requerir_admin
 
 defectos_bp = Blueprint('defectos_bp', __name__, url_prefix='/defectos')
-
-
-def requerir_autenticacion(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if 'usuario_id' not in session:
-            flash('Debes iniciar sesión.', 'warning')
-            return redirect(url_for('auth_bp.login'))
-        return f(*args, **kwargs)
-    return wrapper
 
 
 @defectos_bp.route('/')
 @requerir_autenticacion
 def indice():
-    defectos = Defecto.query.all()
+    query = request.args.get('q', '').strip()
+    if query:
+        defectos = Defecto.query.filter(Defecto.titulo.ilike(f'%{query}%')).all()
+    else:
+        defectos = Defecto.query.all()
     return render_template('defectos/indice.html', defectos=defectos)
 
 
@@ -32,7 +26,7 @@ def detalle(defecto_id):
 
 
 @defectos_bp.route('/nuevo/<int:caso_id>', methods=['GET', 'POST'])
-@requerir_autenticacion
+@requerir_miembro
 def crear(caso_id):
     caso = CasoPrueba.query.get_or_404(caso_id)
     usuario_id = session.get('usuario_id')
@@ -67,7 +61,7 @@ def crear(caso_id):
 
 
 @defectos_bp.route('/<int:defecto_id>/editar', methods=['GET', 'POST'])
-@requerir_autenticacion
+@requerir_miembro
 def editar(defecto_id):
     defecto = Defecto.query.get_or_404(defecto_id)
     usuarios = Usuario.query.all()
@@ -95,7 +89,7 @@ def editar(defecto_id):
 
 
 @defectos_bp.route('/<int:defecto_id>/eliminar', methods=['POST'])
-@requerir_autenticacion
+@requerir_admin
 def eliminar(defecto_id):
     defecto = Defecto.query.get_or_404(defecto_id)
     titulo = defecto.titulo

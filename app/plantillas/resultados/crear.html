@@ -14,7 +14,7 @@
                 <select class="form-select" id="ciclo_id" name="ciclo_id" required>
                     <option value="">-- Seleccionar --</option>
                     {% for ciclo in ciclos %}
-                        <option value="{{ ciclo.id }}">{{ ciclo.nombre }}</option>
+                        <option value="{{ ciclo.id }}" {% if ciclo_id_preseleccionado == ciclo.id %}selected{% endif %}>{{ ciclo.nombre }}</option>
                     {% endfor %}
                 </select>
             </div>

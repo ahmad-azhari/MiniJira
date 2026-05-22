@@ -1,0 +1,103 @@
+import pytest
+from app.modelos import Proyecto, CicloPrueba, CasoPrueba, Resultado
+from config.constantes import EstadoResultadoEnum
+
+def test_ejecucion_sin_autenticar(client):
+    """Acceso a /ejecucion sin iniciar sesión debe redirigir a login."""
+    response = client.get('/ejecucion/', follow_redirects=True)
+    assert response.status_code == 200
+    assert "iniciar" in response.get_data(as_text=True).lower() or "login" in response.get_data(as_text=True).lower()
+
+def test_ejecucion_autenticado_vacio(client):
+    """Acceso a /ejecucion autenticado sin ciclos de prueba."""
+    client.post('/auth/login', data={
+        'nombre_usuario': 'miembro',
+        'contrasena': 'miembro123'
+    }, follow_redirects=True)
+
+    response = client.get('/ejecucion/')
+    assert response.status_code == 200
+    assert "ejecución" in response.get_data(as_text=True).lower()
+
+def test_ejecucion_con_ciclo_y_caso(client):
+    """Acceso a /ejecucion con un ciclo y caso de prueba."""
+    client.post('/auth/login', data={
+        'nombre_usuario': 'miembro',
+        'contrasena': 'miembro123'
+    }, follow_redirects=True)
+
+    with client.application.app_context():
+        from app.base_datos import db
+        proyecto = Proyecto(nombre="Proyecto Ejecución Test", descripcion="Descripción", usuario_id=2)
+        db.session.add(proyecto)
+        db.session.commit()
+
+        caso = CasoPrueba(nombre="Caso Ejecutable 1", objetivo="Objetivo del caso", descripcion="Prueba", usuario_creacion_id=2)
+        db.session.add(caso)
+        db.session.commit()
+
+        ciclo = CicloPrueba(nombre="Ciclo de Ejecución Alpha", descripcion="Primer ciclo de prueba")
+        ciclo.casos_prueba.append(caso)
+        db.session.add(ciclo)
+        db.session.commit()
+
+        ciclo_id = ciclo.id
+        caso_id = caso.id
+
+    response = client.get('/ejecucion/')
+    assert response.status_code == 200
+    content = response.get_data(as_text=True)
+    assert "Ciclo de Ejecución Alpha" in content
+    assert "Caso Ejecutable 1" in content
+
+    response_ciclo = client.get(f'/ejecucion/?ciclo_id={ciclo_id}')
+    assert response_ciclo.status_code == 200
+    assert "Ciclo de Ejecución Alpha" in response_ciclo.get_data(as_text=True)
+
+def test_ejecucion_preseleccion_ciclo_resultado(client):
+    """Verifica que al redirigir para crear un resultado, el ciclo se preselecciona."""
+    client.post('/auth/login', data={
+        'nombre_usuario': 'miembro',
+        'contrasena': 'miembro123'
+    }, follow_redirects=True)
+
+    with client.application.app_context():
+        from app.base_datos import db
+        proyecto = Proyecto(nombre="Proyecto Preseleccion", descripcion="Desc", usuario_id=2)
+        db.session.add(proyecto)
+        db.session.commit()
+
+        caso = CasoPrueba(nombre="Caso a Ejecutar", objetivo="Test", descripcion="Desc", usuario_creacion_id=2)
+        db.session.add(caso)
+        db.session.commit()
+
+        ciclo = CicloPrueba(nombre="Ciclo Preseleccionado", descripcion="Ciclo")
+        ciclo.casos_prueba.append(caso)
+        db.session.add(ciclo)
+        db.session.commit()
+
+        ciclo_id = ciclo.id
+        caso_id = caso.id
+
+    response = client.get(f'/resultados/nuevo/{caso_id}?ciclo_id={ciclo_id}')
+    assert response.status_code == 200
+    content = response.get_data(as_text=True)
+    assert "Ciclo Preseleccionado" in content
+    assert f'value="{ciclo_id}" selected' in content
+
+    response_post = client.post(f'/resultados/nuevo/{caso_id}', data={
+        'estado': 'pasado',
+        'notas': 'Se ejecutó exitosamente',
+        'ciclo_id': str(ciclo_id),
+        'entorno': 'Staging',
+        'resultado_obtenido': 'El caso pasó sin inconvenientes'
+    }, follow_redirects=True)
+    
+    assert response_post.status_code == 200
+    assert "Resultado de prueba registrado exitosamente." in response_post.get_data(as_text=True)
+
+    with client.application.app_context():
+        resultado = Resultado.query.filter_by(caso_prueba_id=caso_id, ciclo_prueba_id=ciclo_id).first()
+        assert resultado is not None
+        assert resultado.estado == EstadoResultadoEnum.PASADO
+        assert resultado.notas == 'Se ejecutó exitosamente'

@@ -11,7 +11,11 @@ epicas_bp = Blueprint('epicas_bp', __name__, url_prefix='/epicas')
 @epicas_bp.route('/')
 @requerir_autenticacion
 def indice():
-    epicas = Epica.query.filter_by(tipo=TipoEnum.EPIC, epica_padre_id=None).all()
+    query = request.args.get('q', '').strip()
+    base_query = Epica.query.filter_by(tipo=TipoEnum.EPIC, epica_padre_id=None)
+    if query:
+        base_query = base_query.filter(Epica.nombre.ilike(f'%{query}%'))
+    epicas = base_query.all()
 
     epicas_con_proyecto = []
     for epica in epicas:
@@ -29,7 +33,11 @@ def indice():
 @epicas_bp.route('/historias')
 @requerir_autenticacion
 def historias():
-    historias = Epica.query.filter_by(tipo=TipoEnum.STORY).all()
+    query = request.args.get('q', '').strip()
+    base_query = Epica.query.filter_by(tipo=TipoEnum.STORY)
+    if query:
+        base_query = base_query.filter(Epica.nombre.ilike(f'%{query}%'))
+    historias = base_query.all()
 
     historias_con_epica = []
     for historia in historias:
@@ -123,6 +131,51 @@ def crear_historia(epica_id):
         return redirect(url_for('epicas_bp.detalle', epica_id=epica_id))
 
     return render_template('epicas/crear_historia.html', epica=epica)
+
+
+@epicas_bp.route('/historias/nuevo', methods=['GET', 'POST'])
+@requerir_miembro
+def crear_historia_suelta():
+    usuario_id = session.get('usuario_id')
+    epicas = Epica.query.filter_by(tipo=TipoEnum.EPIC).all()
+    proyectos = Proyecto.query.all()
+
+    if request.method == 'POST':
+        nombre = request.form.get('nombre', '').strip()
+        descripcion = request.form.get('descripcion', '').strip()
+        prioridad = request.form.get('prioridad', PrioridadEnum.MEDIA.value)
+        epica_id = request.form.get('epica_id') or None
+        proyecto_id = request.form.get('proyecto_id')
+
+        if not nombre:
+            flash('El nombre es obligatorio.', 'danger')
+            return redirect(url_for('epicas_bp.crear_historia_suelta'))
+
+        if epica_id:
+            epica = Epica.query.get(epica_id)
+            proyecto_id = epica.proyecto_id if epica else proyecto_id
+        
+        if not proyecto_id:
+            flash('Debes seleccionar un proyecto o una épica.', 'danger')
+            return redirect(url_for('epicas_bp.crear_historia_suelta'))
+
+        historia = Epica(
+            nombre=nombre,
+            descripcion=descripcion,
+            prioridad=PrioridadEnum(prioridad),
+            tipo=TipoEnum.STORY,
+            estado=EstadoEnum.NUEVO,
+            epica_padre_id=epica_id,
+            proyecto_id=proyecto_id,
+            usuario_creacion_id=usuario_id
+        )
+        db.session.add(historia)
+        db.session.commit()
+
+        flash(f'Historia "{nombre}" creada exitosamente.', 'success')
+        return redirect(url_for('epicas_bp.historias'))
+
+    return render_template('epicas/crear_historia_suelta.html', epicas=epicas, proyectos=proyectos)
 
 
 @epicas_bp.route('/<int:epica_id>/editar', methods=['GET', 'POST'])

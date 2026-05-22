@@ -1,6 +1,6 @@
 import pytest
 import time
-from pruebas.paginas.login_page import LoginPage
+from pruebas.paginas.login import LoginPage
 
 @pytest.mark.login
 @pytest.mark.selenium

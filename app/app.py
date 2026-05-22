@@ -37,6 +37,7 @@ def crear_app(config_name=None):
     from app.rutas.defectos import defectos_bp
     from app.rutas.reportes import reportes_bp
     from app.rutas.usuarios import usuarios_bp
+    from app.rutas.ejecucion import ejecucion_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(proyectos_bp)
@@ -47,6 +48,7 @@ def crear_app(config_name=None):
     app.register_blueprint(defectos_bp)
     app.register_blueprint(reportes_bp)
     app.register_blueprint(usuarios_bp)
+    app.register_blueprint(ejecucion_bp)
 
     @app.route('/')
     def inicio():

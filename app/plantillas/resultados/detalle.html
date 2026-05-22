@@ -17,10 +17,14 @@
         </div>
     </div>
     <div class="col-md-4 text-end">
+        {% if 'miembro' in session.get('roles', []) %}
         <a href="{{ url_for('resultados_bp.editar', resultado_id=resultado.id) }}" class="btn btn-warning"> Editar</a>
+        {% endif %}
+        {% if 'admin' in session.get('roles', []) %}
         <form method="POST" action="{{ url_for('resultados_bp.eliminar', resultado_id=resultado.id) }}" style="display:inline;">
             <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro?')"> Eliminar</button>
         </form>
+        {% endif %}
     </div>
 </div>
 

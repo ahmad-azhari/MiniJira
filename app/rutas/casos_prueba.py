@@ -2,25 +2,19 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from app.base_datos import db
 from app.modelos import CasoPrueba, Epica, Usuario
 from config.constantes import TipoTestEnum, EstadoEnum, PrioridadEnum
-from functools import wraps
+from app.decoradores import requerir_autenticacion, requerir_miembro, requerir_admin
 
 casos_prueba_bp = Blueprint('casos_prueba_bp', __name__, url_prefix='/casos-prueba')
-
-
-def requerir_autenticacion(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if 'usuario_id' not in session:
-            flash('Debes iniciar sesión.', 'warning')
-            return redirect(url_for('auth_bp.login'))
-        return f(*args, **kwargs)
-    return wrapper
 
 
 @casos_prueba_bp.route('/')
 @requerir_autenticacion
 def indice():
-    casos = CasoPrueba.query.all()
+    query = request.args.get('q', '').strip()
+    if query:
+        casos = CasoPrueba.query.filter(CasoPrueba.nombre.ilike(f'%{query}%')).all()
+    else:
+        casos = CasoPrueba.query.all()
     return render_template('casos_prueba/indice.html', casos=casos)
 
 
@@ -32,7 +26,7 @@ def detalle(caso_id):
 
 
 @casos_prueba_bp.route('/nuevo', methods=['GET', 'POST'])
-@requerir_autenticacion
+@requerir_miembro
 def crear():
     usuario_id = session.get('usuario_id')
 
@@ -70,7 +64,7 @@ def crear():
 
 
 @casos_prueba_bp.route('/<int:caso_id>/editar', methods=['GET', 'POST'])
-@requerir_autenticacion
+@requerir_miembro
 def editar(caso_id):
     caso = CasoPrueba.query.get_or_404(caso_id)
 
@@ -98,7 +92,7 @@ def editar(caso_id):
 
 
 @casos_prueba_bp.route('/<int:caso_id>/eliminar', methods=['POST'])
-@requerir_autenticacion
+@requerir_admin
 def eliminar(caso_id):
     caso = CasoPrueba.query.get_or_404(caso_id)
     nombre = caso.nombre

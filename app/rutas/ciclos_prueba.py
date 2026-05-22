@@ -2,19 +2,9 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from app.base_datos import db
 from app.modelos import CicloPrueba, CasoPrueba
 from config.constantes import EstadoEnum
-from functools import wraps
+from app.decoradores import requerir_autenticacion, requerir_miembro, requerir_admin
 
 ciclos_prueba_bp = Blueprint('ciclos_prueba_bp', __name__, url_prefix='/ciclos-prueba')
-
-
-def requerir_autenticacion(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if 'usuario_id' not in session:
-            flash('Debes iniciar sesión.', 'warning')
-            return redirect(url_for('auth_bp.login'))
-        return f(*args, **kwargs)
-    return wrapper
 
 
 @ciclos_prueba_bp.route('/')
@@ -35,7 +25,7 @@ def detalle(ciclo_id):
 
 
 @ciclos_prueba_bp.route('/nuevo', methods=['GET', 'POST'])
-@requerir_autenticacion
+@requerir_miembro
 def crear():
     if request.method == 'POST':
         nombre = request.form.get('nombre', '').strip()
@@ -60,7 +50,7 @@ def crear():
 
 
 @ciclos_prueba_bp.route('/<int:ciclo_id>/editar', methods=['GET', 'POST'])
-@requerir_autenticacion
+@requerir_miembro
 def editar(ciclo_id):
     ciclo = CicloPrueba.query.get_or_404(ciclo_id)
 
@@ -83,7 +73,7 @@ def editar(ciclo_id):
 
 
 @ciclos_prueba_bp.route('/<int:ciclo_id>/agregar-caso', methods=['POST'])
-@requerir_autenticacion
+@requerir_miembro
 def agregar_caso(ciclo_id):
     ciclo = CicloPrueba.query.get_or_404(ciclo_id)
     caso_id = request.form.get('caso_id')
@@ -101,7 +91,7 @@ def agregar_caso(ciclo_id):
 
 
 @ciclos_prueba_bp.route('/<int:ciclo_id>/quitar-caso/<int:caso_id>', methods=['POST'])
-@requerir_autenticacion
+@requerir_miembro
 def quitar_caso(ciclo_id, caso_id):
     ciclo = CicloPrueba.query.get_or_404(ciclo_id)
     caso = CasoPrueba.query.get_or_404(caso_id)
@@ -115,7 +105,7 @@ def quitar_caso(ciclo_id, caso_id):
 
 
 @ciclos_prueba_bp.route('/<int:ciclo_id>/eliminar', methods=['POST'])
-@requerir_autenticacion
+@requerir_admin
 def eliminar(ciclo_id):
     ciclo = CicloPrueba.query.get_or_404(ciclo_id)
     nombre = ciclo.nombre
