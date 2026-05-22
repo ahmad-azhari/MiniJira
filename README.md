@@ -11,6 +11,7 @@ Sistema completo de gestión de pruebas de software construido con Flask y SQLAl
 - **Resultados**: Registrar resultados de ejecución de pruebas
 - **Defectos**: Reportar y rastrear defectos encontrados
 - **Reportes**: Dashboard y reportes de calidad
+- **Ejecución**: Diagramas y ejecución de ciclos
 - **Gestión de Usuarios**: Sistema de roles y permisos
 
 ## 🚀 Instalación
