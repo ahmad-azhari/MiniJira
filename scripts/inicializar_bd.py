@@ -1,3 +1,9 @@
+import sys
+import os
+
+# Agregar directorio raíz al path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from app.app import crear_app, db
 from app.modelos import (
     Usuario, Rol, Proyecto, Epica, CasoPrueba,
