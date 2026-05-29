@@ -1,4 +1,4 @@
-from flask import Flask, redirect, url_for, session
+from flask import Flask, redirect, url_for, session, request
 from config.settings import get_config
 from app.base_datos import db
 import os
@@ -18,10 +18,17 @@ def crear_app(config_name=None):
     config = get_config(config_name)
     app.config.from_object(config)
 
-    log_level = logging.WARNING if config_name != 'development' else logging.WARNING
-    logging.basicConfig(level=log_level, format='%(name)s - %(levelname)s - %(message)s')
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt='%H:%M:%S'
+    )
     logging.getLogger('werkzeug').setLevel(logging.WARNING)
     logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
+    logging.getLogger('sqlalchemy.pool').setLevel(logging.WARNING)
+
+    logger = logging.getLogger(__name__)
+    logger.info(f'Iniciando MiniJira en ambiente: {config_name.upper()}')
 
     db.init_app(app)
 
@@ -62,6 +69,16 @@ def crear_app(config_name=None):
             return redirect(url_for('proyectos_bp.indice'))
         else:
             return redirect(url_for('auth_bp.login'))
+
+    @app.errorhandler(404)
+    def error_404(e):
+        logger.warning(f'Página no encontrada: {request.path}')
+        return {'error': 'Not Found'}, 404
+
+    @app.errorhandler(500)
+    def error_500(e):
+        logger.error(f'Error interno del servidor: {str(e)}')
+        return {'error': 'Internal Server Error'}, 500
 
     @app.shell_context_processor
     def shell_context():
