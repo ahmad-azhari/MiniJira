@@ -1,6 +1,7 @@
 from flask import Flask, redirect, url_for, session, request
 from config.settings import get_config
 from app.base_datos import db
+from flask_migrate import Migrate
 import os
 import logging
 
@@ -31,6 +32,7 @@ def crear_app(config_name=None):
     logger.info(f'Iniciando MiniJira en ambiente: {config_name.upper()}')
 
     db.init_app(app)
+    Migrate(app, db)
 
     carpeta_subidas = app.config.get('UPLOAD_FOLDER')
     if not os.path.exists(carpeta_subidas):
@@ -51,6 +53,7 @@ def crear_app(config_name=None):
     from app.rutas.reportes import reportes_bp
     from app.rutas.usuarios import usuarios_bp
     from app.rutas.ejecucion import ejecucion_bp
+    from app.rutas.automatizacion import automatizacion_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(proyectos_bp)
@@ -62,6 +65,7 @@ def crear_app(config_name=None):
     app.register_blueprint(reportes_bp)
     app.register_blueprint(usuarios_bp)
     app.register_blueprint(ejecucion_bp)
+    app.register_blueprint(automatizacion_bp)
 
     @app.route('/')
     def inicio():
