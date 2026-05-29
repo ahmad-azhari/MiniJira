@@ -21,7 +21,7 @@ def detalle(ciclo_id):
     casos_disponibles = CasoPrueba.query.filter(
         ~CasoPrueba.ciclos_prueba.any(CicloPrueba.id == ciclo_id)
     ).all()
-    return render_template('ciclos_prueba/detalle.html', ciclo=ciclo, casos_disponibles=casos_disponibles)
+    return render_template('ciclos_prueba/detalle.html', ciclo=ciclo, casos_disponibles=casos_disponibles, resultados=ciclo.resultados)
 
 
 @ciclos_prueba_bp.route('/nuevo', methods=['GET', 'POST'])

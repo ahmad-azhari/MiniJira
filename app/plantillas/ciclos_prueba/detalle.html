@@ -100,6 +100,53 @@
         <div class="alert alert-info">No hay casos en este ciclo.</div>
     {% endif %}
 </div>
+
+<div class="mt-4">
+    <h3>Ejecuciones ({{ resultados|length }})</h3>
+
+    {% if resultados %}
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Caso de Prueba</th>
+                        <th>Estado</th>
+                        <th>Entorno</th>
+                        <th>Usuario</th>
+                        <th>Fecha de Ejecución</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for resultado in resultados %}
+                        <tr>
+                            <td>{{ resultado.caso_prueba.nombre }}</td>
+                            <td>
+                                {% if resultado.estado.value == 'Pasado' %}
+                                    <span class="badge bg-success">{{ resultado.estado.value }}</span>
+                                {% elif resultado.estado.value == 'Fallido' %}
+                                    <span class="badge bg-danger">{{ resultado.estado.value }}</span>
+                                {% elif resultado.estado.value == 'Bloqueado' %}
+                                    <span class="badge bg-warning">{{ resultado.estado.value }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ resultado.estado.value }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ resultado.entorno or '-' }}</td>
+                            <td>{{ resultado.creado_por.username if resultado.creado_por else '-' }}</td>
+                            <td>{{ resultado.fecha_creacion.strftime('%Y-%m-%d %H:%M') if resultado.fecha_creacion else '-' }}</td>
+                            <td>
+                                <a href="{{ url_for('casos_prueba_bp.detalle', caso_id=resultado.caso_prueba.id) }}" class="btn btn-sm btn-outline-primary">Ver Caso</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info">No hay ejecuciones en este ciclo.</div>
+    {% endif %}
+</div>
 {% endblock %}
 
 {% block scripts_adicionales %}
