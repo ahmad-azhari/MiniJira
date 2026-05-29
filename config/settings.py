@@ -18,7 +18,7 @@ class DevelopmentConfig(Config):
         'DATABASE_URL',
         'mysql+pymysql://root:@localhost/minijira'
     )
-    SQLALCHEMY_ECHO = True
+    SQLALCHEMY_ECHO = False
 
 
 class TestingConfig(Config):

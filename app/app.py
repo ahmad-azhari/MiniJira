@@ -2,6 +2,7 @@ from flask import Flask, redirect, url_for, session
 from config.settings import get_config
 from app.base_datos import db
 import os
+import logging
 
 
 def crear_app(config_name=None):
@@ -16,6 +17,11 @@ def crear_app(config_name=None):
 
     config = get_config(config_name)
     app.config.from_object(config)
+
+    log_level = logging.WARNING if config_name != 'development' else logging.WARNING
+    logging.basicConfig(level=log_level, format='%(name)s - %(levelname)s - %(message)s')
+    logging.getLogger('werkzeug').setLevel(logging.WARNING)
+    logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
 
     db.init_app(app)
 
