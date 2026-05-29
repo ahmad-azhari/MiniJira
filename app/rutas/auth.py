@@ -25,11 +25,11 @@ def login():
             session['nombre_usuario'] = usuario.nombre_usuario
             session['roles'] = [rol.nombre for rol in usuario.roles] if usuario.roles else ['viewer']
 
-            logger.info(f'✓ Login exitoso: {nombre_usuario} ({", ".join(session["roles"])})')
+            logger.info(f'Login exitoso: {nombre_usuario} ({", ".join(session["roles"])})')
             flash(f'¡Bienvenido {usuario.nombre_usuario}!', 'success')
             return redirect(url_for('proyectos_bp.indice'))
         else:
-            logger.warning(f'✗ Intento de login fallido: {nombre_usuario}')
+            logger.warning(f'Intento de login fallido: {nombre_usuario}')
             flash('Usuario o contraseña incorrectos.', 'danger')
 
     return render_template('auth/login.html')
@@ -38,7 +38,7 @@ def login():
 @auth_bp.route('/logout')
 def logout():
     usuario = session.get('nombre_usuario', 'desconocido')
-    logger.info(f'✗ Logout: {usuario}')
+    logger.info(f'Logout: {usuario}')
     session.clear()
     flash('Sesión cerrada exitosamente.', 'info')
     return redirect(url_for('auth_bp.login'))
