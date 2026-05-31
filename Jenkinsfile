@@ -63,7 +63,9 @@ pipeline {
                         echo "DEBUG: TEST_SCRIPT length=${contenidoGherkin?.length() ?: 0}, valor='${contenidoGherkin}'"
 
                         if (contenidoGherkin?.trim()) {
-                            writeFile file: rutaFeature, text: contenidoGherkin
+                            // Convertir espacios de vuelta a saltos de línea (Jenkins reemplaza \n con espacios)
+                            def contenidoConSaltos = contenidoGherkin.replaceAll('  +', '\n').trim()
+                            writeFile file: rutaFeature, text: contenidoConSaltos
                         } else {
                             error "TEST_SCRIPT no proporcionado. Proporciona contenido Gherkin válido para ejecutar la prueba."
                         }
