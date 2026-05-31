@@ -23,4 +23,5 @@ htmlcov/
 Z_Analysis.md
 flask.log
 test_runner/features/*.feature
+test_runner/test_output.json
 nohup.out

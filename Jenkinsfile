@@ -6,12 +6,12 @@ Map parseJsonSafe(String json) {
 }
 
 pipeline {
-    agent { label 'windows' }
+    agent any
 
     environment {
-        RUTA_BASE = "${WORKSPACE}\\test_runner"
+        RUTA_BASE = "${WORKSPACE}/test_runner"
         RUTA_PYTHON = "python"
-        URL_BACKEND = "http://localhost:5000"
+        URL_BACKEND = "http://host.docker.internal:5000"
     }
 
     parameters {
@@ -27,7 +27,7 @@ pipeline {
             steps {
                 script {
                     echo "Ruta base: ${RUTA_BASE}"
-                    def rutaEjecutor = "${RUTA_BASE}\\ejecutor.py"
+                    def rutaEjecutor = "${RUTA_BASE}/ejecutor.py"
                     if (!fileExists(rutaEjecutor)) {
                         error "ejecutor.py NO encontrado en ${rutaEjecutor}"
                     }
@@ -58,24 +58,27 @@ pipeline {
                     def ejecutarTest = { idTest, contenidoGherkin ->
                         def timestamp = System.currentTimeMillis()
                         def nombreFeature = "test_${idTest}_${timestamp}.feature"
-                        def rutaFeature = "${RUTA_BASE}\\features\\${nombreFeature}"
+                        def rutaFeature = "${RUTA_BASE}/features/${nombreFeature}"
 
                         if (contenidoGherkin?.trim()) {
                             writeFile file: rutaFeature, text: contenidoGherkin
                         } else {
-                            error "TEST_SCRIPT no proporcionado. Proporciona contenido Gherkin válido para ejecutar la prueba."
+                            def baseTemp = "${RUTA_BASE}/features/temp.feature"
+                            if (fileExists(baseTemp)) {
+                                sh script: "cp -f '${baseTemp}' '${rutaFeature}'"
+                            }
                         }
 
-                        def cmd = "\"${RUTA_PYTHON}\" \"${RUTA_BASE}\\ejecutor.py\" \"${rutaFeature}\" ${idTest}"
+                        def cmd = "${RUTA_PYTHON} ${RUTA_BASE}/ejecutor.py ${rutaFeature} ${idTest}"
                         echo "Ejecutando: ${cmd}"
 
-                        def rutaSalida = "${RUTA_BASE}\\salida_${idTest}.txt"
-                        bat(
+                        def salida = sh(
                             label: "Ejecutar Test ${idTest}",
-                            script: "${cmd} > \"${rutaSalida}\" 2>&1"
+                            script: cmd,
+                            returnStdout: true
                         )
 
-                        def salida = readFile(rutaSalida).trim()
+                        salida = salida.trim()
 
                         echo "Salida:"
                         echo salida
