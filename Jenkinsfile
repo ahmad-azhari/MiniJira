@@ -63,9 +63,11 @@ pipeline {
                         if (contenidoGherkin?.trim()) {
                             writeFile file: rutaFeature, text: contenidoGherkin
                         } else {
-                            def baseTemp = "${RUTA_BASE}\\features\\temp.feature"
-                            if (fileExists(baseTemp)) {
-                                bat script: "copy /Y \"${baseTemp}\" \"${rutaFeature}\""
+                            def smokeTest = "${RUTA_BASE}\\features\\smoke_test.feature"
+                            if (fileExists(smokeTest)) {
+                                bat script: "copy /Y \"${smokeTest}\" \"${rutaFeature}\""
+                            } else {
+                                error "No TEST_SCRIPT provided and smoke_test.feature not found"
                             }
                         }
 
