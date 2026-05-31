@@ -60,10 +60,7 @@ pipeline {
                         def nombreFeature = "test_${idTest}_${timestamp}.feature"
                         def rutaFeature = "${RUTA_BASE}\\features\\${nombreFeature}"
 
-                        echo "DEBUG: TEST_SCRIPT length=${contenidoGherkin?.length() ?: 0}, valor='${contenidoGherkin}'"
-
                         if (contenidoGherkin?.trim()) {
-                            // Convertir espacios de vuelta a saltos de línea (Jenkins reemplaza \n con espacios)
                             def contenidoConSaltos = contenidoGherkin.replaceAll('  +', '\n').trim()
                             writeFile file: rutaFeature, text: contenidoConSaltos
                         } else {
