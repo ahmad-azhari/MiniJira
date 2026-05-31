@@ -72,11 +72,13 @@ pipeline {
                         def cmd = "\"${RUTA_PYTHON}\" \"${RUTA_BASE}\\ejecutor.py\" \"${rutaFeature}\" ${idTest}"
                         echo "Ejecutando: ${cmd}"
 
-                        def salida = bat(
+                        def rutaSalida = "${RUTA_BASE}\\salida_${idTest}.txt"
+                        bat(
                             label: "Ejecutar Test ${idTest}",
-                            script: cmd,
-                            returnStdout: true
-                        ).trim()
+                            script: "${cmd} > \"${rutaSalida}\" 2>&1"
+                        )
+
+                        def salida = readFile(rutaSalida).trim()
 
                         echo "Salida:"
                         echo salida
