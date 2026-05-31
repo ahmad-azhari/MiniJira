@@ -63,10 +63,7 @@ pipeline {
                         if (contenidoGherkin?.trim()) {
                             writeFile file: rutaFeature, text: contenidoGherkin
                         } else {
-                            def baseTemp = "${RUTA_BASE}\\features\\temp.feature"
-                            if (fileExists(baseTemp)) {
-                                bat script: "copy /Y \"${baseTemp}\" \"${rutaFeature}\""
-                            }
+                            error "TEST_SCRIPT no proporcionado. Proporciona contenido Gherkin válido para ejecutar la prueba."
                         }
 
                         def cmd = "\"${RUTA_PYTHON}\" \"${RUTA_BASE}\\ejecutor.py\" \"${rutaFeature}\" ${idTest}"
