@@ -13,5 +13,4 @@ Z_Analysis.md
 flask.log
 test_runner/features/*.feature
 test_runner/test_output.json
-test_runner/features/*.feature
 nohup.out
