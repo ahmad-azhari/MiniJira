@@ -3,6 +3,7 @@ from app.base_datos import db
 from config.constantes import EstadoResultadoEnum, ModoEjecucionEnum, EstadoEjecucionEnum
 from flask import current_app
 from datetime import datetime
+import uuid
 
 
 class AutomatizacionService:
@@ -139,6 +140,9 @@ class AutomatizacionService:
             ciclo = AutomatizacionService.validar_ciclo_prueba(ciclo_id)
             if caso not in ciclo.casos_prueba:
                 raise ValueError(f"Caso {caso_id} no pertenece al ciclo {ciclo_id}")
+
+        if not id_solicitud:
+            id_solicitud = str(uuid.uuid4())
 
         resultado = Resultado(
             caso_prueba_id=caso_id,

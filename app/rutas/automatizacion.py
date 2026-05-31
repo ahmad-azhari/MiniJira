@@ -36,8 +36,7 @@ def ejecutar_test_jenkins(caso_id):
         if resultado_jenkins['exito']:
             resultado = AutomatizacionService.crear_resultado_automatizado(
                 caso_id=caso_id,
-                build_number=resultado_jenkins.get('build_number'),
-                id_solicitud=resultado_jenkins.get('id_solicitud')
+                build_number=resultado_jenkins.get('build_number')
             )
 
             if request.headers.get('Accept') == 'application/json':
@@ -101,8 +100,7 @@ def ejecutar_ciclo_jenkins(ciclo_id):
                 resultado = AutomatizacionService.crear_resultado_automatizado(
                     caso_id=caso.id,
                     ciclo_id=ciclo_id,
-                    build_number=resultado_jenkins.get('build_number'),
-                    id_solicitud=resultado_jenkins.get('id_solicitud')
+                    build_number=resultado_jenkins.get('build_number')
                 )
                 resultados_ids.append(resultado.id)
 
