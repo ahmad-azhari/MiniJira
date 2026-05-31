@@ -45,7 +45,7 @@ def ejecutar_feature(ruta_feature: str):
             salida_json = {
                 'estado_prueba': 'FALLIDO',
                 'resultado_obtenido': 'Behave no generó result.json',
-                'notas': f"STDOUT: {proceso.stdout}\nSTDERR: {proceso.stderr}",
+                'notas': f"STDOUT: {proceso.stdout}\nSTDERR: {proceso.stderr}\nReturn Code: {proceso.returncode}",
                 'archivo': None
             }
             print(json.dumps(salida_json))
