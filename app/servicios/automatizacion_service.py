@@ -1,7 +1,8 @@
 from app.modelos import CasoPrueba, CicloPrueba, Resultado
 from app.base_datos import db
-from config.constantes import EstadoResultadoEnum
+from config.constantes import EstadoResultadoEnum, ModoEjecucionEnum, EstadoEjecucionEnum
 from flask import current_app
+from datetime import datetime
 
 
 class AutomatizacionService:
@@ -57,6 +58,14 @@ class AutomatizacionService:
             archivo_adjunto=datos.get('archivo'),
             id_solicitud=id_solicitud,
             usuario_creacion_id=None,
+            modo_ejecucion=ModoEjecucionEnum.AUTOMATIZADO,
+            estado_ejecucion=EstadoEjecucionEnum.COMPLETADO,
+            jenkins_build_number=datos.get('jenkins_build_number'),
+            jenkins_log_url=datos.get('jenkins_log_url'),
+            tiempo_inicio_jenkins=datos.get('tiempo_inicio_jenkins'),
+            tiempo_fin_jenkins=datos.get('tiempo_fin_jenkins'),
+            numero_intentos=datos.get('numero_intentos', 1),
+            json_respuesta_jenkins=datos,
         )
 
         db.session.add(resultado)
@@ -73,3 +82,83 @@ class AutomatizacionService:
     def obtener_casos_ciclo(ciclo_id: int) -> list:
         ciclo = AutomatizacionService.validar_ciclo_prueba(ciclo_id)
         return ciclo.casos_prueba if ciclo else []
+
+    @staticmethod
+    def obtener_estado_ejecucion_jenkins(resultado_id: int) -> dict:
+        resultado = Resultado.query.get(resultado_id)
+        if not resultado:
+            raise ValueError(f"Resultado {resultado_id} no existe")
+
+        return {
+            'resultado_id': resultado.id,
+            'estado_ejecucion': resultado.estado_ejecucion.value if resultado.estado_ejecucion else None,
+            'estado_resultado': resultado.estado.value if resultado.estado else None,
+            'modo_ejecucion': resultado.modo_ejecucion.value if resultado.modo_ejecucion else None,
+            'jenkins_build_number': resultado.jenkins_build_number,
+            'jenkins_log_url': resultado.jenkins_log_url,
+            'tiempo_inicio': resultado.tiempo_inicio_jenkins.isoformat() if resultado.tiempo_inicio_jenkins else None,
+            'tiempo_fin': resultado.tiempo_fin_jenkins.isoformat() if resultado.tiempo_fin_jenkins else None,
+            'numero_intentos': resultado.numero_intentos,
+            'fecha_creacion': resultado.fecha_creacion.isoformat(),
+            'resultado_obtenido': resultado.resultado_obtenido[:100] if resultado.resultado_obtenido else None,
+        }
+
+    @staticmethod
+    def reintentar_ejecucion(resultado_id: int) -> dict:
+        resultado = Resultado.query.get(resultado_id)
+        if not resultado:
+            raise ValueError(f"Resultado {resultado_id} no existe")
+
+        if resultado.modo_ejecucion != ModoEjecucionEnum.AUTOMATIZADO:
+            raise ValueError(f"Solo se pueden reintentar ejecuciones automatizadas")
+
+        if resultado.estado != EstadoResultadoEnum.FALLIDO:
+            current_app.logger.warning(f"Se intenta reintentar resultado que no falló: {resultado_id}")
+
+        resultado.numero_intentos += 1
+        resultado.estado_ejecucion = EstadoEjecucionEnum.PENDIENTE
+        resultado.tiempo_inicio_jenkins = datetime.utcnow()
+        resultado.tiempo_fin_jenkins = None
+
+        db.session.commit()
+
+        current_app.logger.info(f"Reintento #{resultado.numero_intentos} para resultado {resultado_id}")
+
+        return {
+            'exito': True,
+            'numero_intento': resultado.numero_intentos,
+            'resultado_id': resultado.id
+        }
+
+    @staticmethod
+    def crear_resultado_automatizado(caso_id: int, ciclo_id: int = None,
+                                     build_number: int = None, id_solicitud: str = None) -> Resultado:
+        caso = AutomatizacionService.validar_caso_prueba(caso_id)
+
+        if ciclo_id:
+            ciclo = AutomatizacionService.validar_ciclo_prueba(ciclo_id)
+            if caso not in ciclo.casos_prueba:
+                raise ValueError(f"Caso {caso_id} no pertenece al ciclo {ciclo_id}")
+
+        resultado = Resultado(
+            caso_prueba_id=caso_id,
+            ciclo_prueba_id=ciclo_id,
+            estado=EstadoResultadoEnum.EN_PROGRESO,
+            entorno='Automatizado',
+            modo_ejecucion=ModoEjecucionEnum.AUTOMATIZADO,
+            estado_ejecucion=EstadoEjecucionEnum.PENDIENTE,
+            jenkins_build_number=build_number,
+            id_solicitud=id_solicitud,
+            numero_intentos=1,
+            tiempo_inicio_jenkins=datetime.utcnow(),
+        )
+
+        db.session.add(resultado)
+        db.session.commit()
+
+        current_app.logger.info(
+            f"Resultado automatizado creado: caso={caso_id}, ciclo={ciclo_id}, "
+            f"build={build_number}, id_solicitud={id_solicitud}"
+        )
+
+        return resultado

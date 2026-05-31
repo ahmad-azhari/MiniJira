@@ -12,9 +12,19 @@
         </div>
     </div>
     <div class="col-md-4 text-end">
-        <a href="{{ url_for('ejecucion_bp.indice', ciclo_id=ciclo.id) }}" class="btn btn-success">Ejecutar Ciclo</a>
+        <a href="{{ url_for('ejecucion_bp.indice', ciclo_id=ciclo.id) }}" class="btn btn-info btn-sm">
+            <i class="bi bi-eye"></i> Ver Ejecución
+        </a>
+        {% if 'miembro' in session.get('roles', []) and ciclo.casos_prueba|length > 0 %}
+        <button type="button"
+                class="btn btn-success btn-sm"
+                id="executeJenkinsCycleBtn"
+                data-ciclo-id="{{ ciclo.id }}">
+            <i class="bi bi-play-fill"></i> Ejecutar con Jenkins
+        </button>
+        {% endif %}
         {% if 'miembro' in session.get('roles', []) %}
-        <a href="{{ url_for('ciclos_prueba_bp.editar', ciclo_id=ciclo.id) }}" class="btn btn-warning"> Editar</a>
+        <a href="{{ url_for('ciclos_prueba_bp.editar', ciclo_id=ciclo.id) }}" class="btn btn-warning btn-sm"> Editar</a>
         {% endif %}
         {% if 'admin' in session.get('roles', []) %}
         <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
@@ -162,7 +172,7 @@
                     confirmBtn.setAttribute('disabled', 'true');
                 }
             });
-            
+
             const deleteModalEl = document.getElementById('deleteModal');
             if (deleteModalEl) {
                 deleteModalEl.addEventListener('hidden.bs.modal', function () {
@@ -171,6 +181,69 @@
                 });
             }
         }
+
+        const executeJenkinsCycleBtn = document.getElementById('executeJenkinsCycleBtn');
+        if (executeJenkinsCycleBtn) {
+            executeJenkinsCycleBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const cicloId = this.dataset.cicloId;
+
+                if (confirm('¿Ejecutar todos los casos de este ciclo en Jenkins?')) {
+                    executeFullCycle(cicloId, this);
+                }
+            });
+        }
     });
+
+    function executeFullCycle(cicloId, button) {
+        const originalText = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Ejecutando...';
+
+        fetch(`/automatizacion/ejecutar/ciclo/jenkins/${cicloId}`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (response.status === 202) {
+                return response.json().then(data => {
+                    showNotification(`${data.cantidad} casos enviados a Jenkins`, 'success');
+                    button.innerHTML = 'En ejecución...';
+                    setTimeout(() => location.reload(), 2000);
+                    return data;
+                });
+            } else {
+                return response.json().then(data => {
+                    throw new Error(data.error || 'Error en la solicitud');
+                });
+            }
+        })
+        .catch(error => {
+            button.innerHTML = originalText;
+            button.disabled = false;
+            showNotification(error.message, 'danger');
+        });
+    }
+
+    function showNotification(message, type) {
+        const alertClass = `alert-${type}`;
+        const alert = document.createElement('div');
+        alert.className = `alert ${alertClass} alert-dismissible fade show`;
+        alert.setAttribute('role', 'alert');
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        const container = document.querySelector('.row') || document.body;
+        container.insertBefore(alert, container.firstChild);
+
+        setTimeout(() => {
+            alert.remove();
+        }, 5000);
+    }
 </script>
 {% endblock %}

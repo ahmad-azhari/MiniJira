@@ -46,3 +46,15 @@ class EstadoProyectoEnum(str, enum.Enum):
     ACTIVO = "activo"
     EN_PAUSA = "en_pausa"
     CERRADO = "cerrado"
+
+
+class ModoEjecucionEnum(str, enum.Enum):
+    MANUAL = "manual"
+    AUTOMATIZADO = "automatizado"
+
+
+class EstadoEjecucionEnum(str, enum.Enum):
+    PENDIENTE = "pendiente"
+    EN_PROGRESO = "en_progreso"
+    COMPLETADO = "completado"
+    ERROR = "error"

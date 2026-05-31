@@ -102,6 +102,11 @@ pipeline {
                                 jsonObj['id_solicitud'] = params.REQUEST_ID
                             }
 
+                            jsonObj['jenkins_build_number'] = env.BUILD_NUMBER
+                            jsonObj['jenkins_log_url'] = env.BUILD_URL + "console"
+                            jsonObj['tiempo_inicio_jenkins'] = System.currentTimeMillis()
+                            jsonObj['numero_intentos'] = 1
+
                             def cuerpo = groovy.json.JsonOutput.toJson(jsonObj)
                             def urlCallback = "${URL_BACKEND}/automatizacion/api/resultados/desde-jenkins/${idTest}"
 

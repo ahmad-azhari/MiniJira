@@ -9,6 +9,9 @@ logger = logging.getLogger(__name__)
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    if 'usuario_id' in session:
+        return redirect(url_for('proyectos_bp.indice'))
+
     if request.method == 'POST':
         nombre_usuario = request.form.get('nombre_usuario', '').strip()
         contrasena = request.form.get('contrasena', '')

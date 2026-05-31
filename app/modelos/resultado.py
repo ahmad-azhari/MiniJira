@@ -1,6 +1,6 @@
 from datetime import datetime
 from app.base_datos import db
-from config.constantes import EstadoResultadoEnum
+from config.constantes import EstadoResultadoEnum, ModoEjecucionEnum, EstadoEjecucionEnum
 
 
 class Resultado(db.Model):
@@ -16,6 +16,15 @@ class Resultado(db.Model):
     resultado_obtenido = db.Column(db.Text)
     notas = db.Column(db.Text)
     archivo_adjunto = db.Column(db.String(255), nullable=True)
+
+    modo_ejecucion = db.Column(db.Enum(ModoEjecucionEnum), default=ModoEjecucionEnum.MANUAL)
+    estado_ejecucion = db.Column(db.Enum(EstadoEjecucionEnum), default=EstadoEjecucionEnum.COMPLETADO)
+    jenkins_build_number = db.Column(db.Integer, nullable=True)
+    jenkins_log_url = db.Column(db.String(500), nullable=True)
+    tiempo_inicio_jenkins = db.Column(db.DateTime, nullable=True)
+    tiempo_fin_jenkins = db.Column(db.DateTime, nullable=True)
+    numero_intentos = db.Column(db.Integer, default=1)
+    json_respuesta_jenkins = db.Column(db.JSON, nullable=True)
 
     usuario_creacion_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)

@@ -120,9 +120,20 @@
                                 <h3 class="h4 mb-1">{{ ciclo_seleccionado.nombre }}</h3>
                                 <p class="text-muted mb-0 small">{{ ciclo_seleccionado.descripcion or 'Sin descripción.' }}</p>
                             </div>
-                            <span class="badge bg-light text-dark p-2 fs-6">
-                                Estado: {{ ciclo_seleccionado.estado.value }}
-                            </span>
+                            <div class="text-end">
+                                {% if 'miembro' in session.get('roles', []) and ciclo_seleccionado.casos_prueba|length > 0 %}
+                                <button type="button"
+                                        class="btn btn-success me-2"
+                                        id="executeFullCycleBtn"
+                                        data-ciclo-id="{{ ciclo_seleccionado.id }}"
+                                        style="margin-bottom: 0.5rem;">
+                                    <i class="bi bi-play-fill"></i> Ejecutar Ciclo Completo
+                                </button>
+                                {% endif %}
+                                <span class="badge bg-light text-dark p-2 fs-6">
+                                    Estado: {{ ciclo_seleccionado.estado.value }}
+                                </span>
+                            </div>
                         </div>
                     </div>
                     <div class="card-body p-4">
@@ -136,6 +147,7 @@
                                             <th>Caso de Prueba</th>
                                             <th>Prioridad</th>
                                             <th>Tipo</th>
+                                            <th>Modo</th>
                                             <th>Último Estado</th>
                                             <th class="text-end">Acciones</th>
                                         </tr>
@@ -156,6 +168,17 @@
                                                     <span class="badge bg-light text-dark">{{ item.caso.tipo.value }}</span>
                                                 </td>
                                                 <td>
+                                                    {% if item.caso.tipo.value == 'automatizado' %}
+                                                        {% if item.caso.tiene_script_valido() %}
+                                                            <span class="badge bg-success" style="font-size: 0.85rem;">Automático</span>
+                                                        {% else %}
+                                                            <span class="badge bg-warning text-dark" style="font-size: 0.85rem;">Sin script</span>
+                                                        {% endif %}
+                                                    {% else %}
+                                                        <span class="badge bg-secondary" style="font-size: 0.85rem;">Manual</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
                                                     {% if item.ultimo_resultado %}
                                                         <span class="badge bg-{% if item.ultimo_resultado.estado.value == 'pasado' %}success{% elif item.ultimo_resultado.estado.value == 'fallido' %}danger{% elif item.ultimo_resultado.estado.value == 'bloqueado' %}warning{% else %}info{% endif %}">
                                                             {{ item.ultimo_resultado.estado.value | upper }}
@@ -169,10 +192,22 @@
                                                 </td>
                                                 <td class="text-end">
                                                     {% if 'miembro' in session.get('roles', []) %}
-                                                        <a href="{{ url_for('resultados_bp.crear', caso_id=item.caso.id, ciclo_id=ciclo_seleccionado.id) }}" 
-                                                           class="btn btn-sm btn-success">
-                                                            ▶ Ejecutar
-                                                        </a>
+                                                        <div class="btn-group btn-group-sm" role="group">
+                                                            <a href="{{ url_for('resultados_bp.crear', caso_id=item.caso.id, ciclo_id=ciclo_seleccionado.id) }}"
+                                                               class="btn btn-outline-primary"
+                                                               style="font-size: 0.85rem;">
+                                                               Ejecutar
+                                                            </a>
+                                                            {% if item.caso.tipo.value == 'automatizado' and item.caso.tiene_script_valido() %}
+                                                                <button type="button"
+                                                                        class="btn btn-outline-success execution-auto-btn"
+                                                                        data-caso-id="{{ item.caso.id }}"
+                                                                        data-ciclo-id="{{ ciclo_seleccionado.id }}"
+                                                                        style="font-size: 0.85rem;">
+                                                                    Automático
+                                                                </button>
+                                                            {% endif %}
+                                                        </div>
                                                     {% else %}
                                                         <span class="text-muted small">Solo lectura</span>
                                                     {% endif %}
@@ -203,20 +238,34 @@
 
 {% block scripts_adicionales %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/execution-monitor.js') }}"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const statsCiclos = {{ stats_ciclos | tojson }};
-        
+
+        // Manejador del botón de ejecutar ciclo completo
+        const executeFullCycleBtn = document.getElementById('executeFullCycleBtn');
+        if (executeFullCycleBtn) {
+            executeFullCycleBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const cicloId = this.dataset.cicloId;
+
+                if (confirm('¿Ejecutar todos los casos de este ciclo en Jenkins?')) {
+                    executeFullCycle(cicloId, this);
+                }
+            });
+        }
+
         if (statsCiclos && statsCiclos.length > 0) {
             const ctx = document.getElementById('stackedBarChart').getContext('2d');
-            
+
             const labels = statsCiclos.map(item => item.nombre);
             const pasadosData = statsCiclos.map(item => item.pasados);
             const fallidosData = statsCiclos.map(item => item.fallidos);
             const bloqueadosData = statsCiclos.map(item => item.bloqueados);
             const enProgresoData = statsCiclos.map(item => item.en_progreso);
             const pendientesData = statsCiclos.map(item => item.pendientes);
-            
+
             new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -291,5 +340,56 @@
             });
         }
     });
+
+    function executeFullCycle(cicloId, button) {
+        const originalText = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Ejecutando...';
+
+        fetch(`/automatizacion/ejecutar/ciclo/jenkins/${cicloId}`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (response.status === 202) {
+                return response.json().then(data => {
+                    showNotification(`${data.cantidad} casos enviados a Jenkins`, 'success');
+                    button.innerHTML = 'En ejecución...';
+                    setTimeout(() => location.reload(), 2000);
+                    return data;
+                });
+            } else {
+                return response.json().then(data => {
+                    throw new Error(data.error || 'Error en la solicitud');
+                });
+            }
+        })
+        .catch(error => {
+            button.innerHTML = originalText;
+            button.disabled = false;
+            showNotification(error.message, 'danger');
+        });
+    }
+
+    function showNotification(message, type) {
+        const alertClass = `alert-${type}`;
+        const alert = document.createElement('div');
+        alert.className = `alert ${alertClass} alert-dismissible fade show`;
+        alert.setAttribute('role', 'alert');
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        const container = document.querySelector('.container-fluid') || document.body;
+        container.insertBefore(alert, container.firstChild);
+
+        setTimeout(() => {
+            alert.remove();
+        }, 5000);
+    }
 </script>
 {% endblock %}

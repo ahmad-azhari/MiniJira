@@ -28,6 +28,7 @@ class CasoPrueba(db.Model):
     url = db.Column(db.String(500), nullable=True)
     script_prueba = db.Column(db.Text, nullable=True)
     archivo_adjunto = db.Column(db.String(255), nullable=True)
+    requiere_intento_manual = db.Column(db.Boolean, default=False)
 
     usuario_creacion_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
@@ -62,6 +63,11 @@ class CasoPrueba(db.Model):
 
     def es_automatizado(self):
         return self.tipo == TipoTestEnum.AUTOMATIZADO
+
+    def tiene_script_valido(self):
+        if not self.es_automatizado():
+            return True
+        return bool(self.script_prueba and self.script_prueba.strip())
 
     def __repr__(self):
         return f'<CasoPrueba {self.nombre}>'

@@ -6,16 +6,28 @@
 <div class="row mb-4">
     <div class="col-md-8">
         <h1>{{ caso.nombre }}</h1>
-        <p class="text-muted"><strong>Objetivo:</strong> {{ caso.objetivo }}</p>
+        <p class="text-muted"><strong>Objetivo:</strong> {{ caso.objetivo or 'Sin objetivo' }}</p>
         <div class="mt-2">
             <span class="badge bg-info">{{ caso.tipo.value }}</span>
-            <span class="badge bg-warning">{{ caso.prioridad.value }}</span>
+            <span class="badge bg-warning text-dark">{{ caso.prioridad.value }}</span>
             <span class="badge bg-secondary">{{ caso.estado.value }}</span>
+            {% if caso.tipo.value == 'automatizado' %}
+                {% if caso.tiene_script_valido() %}
+                    <span class="badge bg-success">Script automático</span>
+                {% else %}
+                    <span class="badge bg-danger">Sin script automático</span>
+                {% endif %}
+            {% endif %}
         </div>
     </div>
     <div class="col-md-4 text-end">
         {% if 'miembro' in session.get('roles', []) %}
-        <a href="{{ url_for('casos_prueba_bp.editar', caso_id=caso.id) }}" class="btn btn-warning"> Editar</a>
+        <a href="{{ url_for('casos_prueba_bp.editar', caso_id=caso.id) }}" class="btn btn-warning btn-sm"> Editar</a>
+        {% if caso.tipo.value == 'automatizado' and caso.tiene_script_valido() %}
+        <button type="button" class="btn btn-success btn-sm" id="executeAutoBtn">
+            <i class="bi bi-play-fill"></i> Jenkins
+        </button>
+        {% endif %}
         {% endif %}
         {% if 'admin' in session.get('roles', []) %}
         <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
@@ -70,14 +82,65 @@
     </div>
 </div>
 
-<div class="mt-4">
-    <h5>Resultados de Ejecución</h5>
-    {% if 'miembro' in session.get('roles', []) %}
-    <a href="{{ url_for('resultados_bp.crear', caso_id=caso.id) }}" class="btn btn-sm btn-success mb-3">+ Registrar Resultado</a>
-    {% endif %}
+{% if caso.tipo.value == 'automatizado' and caso.script_prueba %}
+<div class="card mt-4 border-success">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0">Script de Automatización (Gherkin)</h5>
+    </div>
+    <div class="card-body">
+        <pre style="background-color: #f5f5f5; padding: 15px; border-radius: 4px; overflow-x: auto;"><code>{{ caso.script_prueba }}</code></pre>
+    </div>
+</div>
+{% endif %}
 
-    {% if 'miembro' in session.get('roles', []) %}
-    <a href="{{ url_for('defectos_bp.crear', caso_id=caso.id) }}" class="btn btn-sm btn-danger mb-3"> Reportar Defecto</a>
+<div class="mt-4">
+    <h5>Resultados de Pruebas Previas</h5>
+    {% if caso.resultados %}
+        <div class="table-responsive">
+            <table class="table table-sm table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th style="font-size: 0.9rem;">Fecha</th>
+                        <th style="font-size: 0.9rem;">Modo</th>
+                        <th style="font-size: 0.9rem;">Estado</th>
+                        <th style="font-size: 0.9rem;">Entorno</th>
+                        <th style="font-size: 0.9rem;">Resultado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for resultado in caso.resultados[:5] %}
+                    <tr>
+                        <td>
+                            <small>{{ resultado.fecha_creacion.strftime('%d/%m %H:%M') }}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-{% if resultado.modo_ejecucion and resultado.modo_ejecucion.value == 'automatizado' %}success{% else %}secondary{% endif %}" style="font-size: 0.85rem;">
+                                {% if resultado.modo_ejecucion %}{{ resultado.modo_ejecucion.value }}{% else %}manual{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-{% if resultado.estado.value == 'pasado' %}success{% elif resultado.estado.value == 'fallido' %}danger{% elif resultado.estado.value == 'bloqueado' %}warning{% else %}info{% endif %}" style="font-size: 0.85rem;">
+                                {{ resultado.estado.value | upper }}
+                            </span>
+                        </td>
+                        <td>
+                            <small>{{ resultado.entorno or 'N/A' }}</small>
+                        </td>
+                        <td>
+                            <small class="text-truncate" style="max-width: 150px; display: block;" title="{{ resultado.resultado_obtenido or '' }}">
+                                {{ resultado.resultado_obtenido[:50] if resultado.resultado_obtenido else 'N/A' }}
+                            </small>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if caso.resultados|length > 5 %}
+        <p class="text-muted small">... y {{ caso.resultados|length - 5 }} resultados más</p>
+        {% endif %}
+    {% else %}
+        <p class="text-muted">No hay resultados de ejecución aún.</p>
     {% endif %}
 </div>
 {% endblock %}
@@ -95,7 +158,7 @@
                     confirmBtn.setAttribute('disabled', 'true');
                 }
             });
-            
+
             const deleteModalEl = document.getElementById('deleteModal');
             if (deleteModalEl) {
                 deleteModalEl.addEventListener('hidden.bs.modal', function () {
@@ -104,6 +167,71 @@
                 });
             }
         }
+
+        const autoBtn = document.getElementById('executeAutoBtn');
+        if (autoBtn) {
+            autoBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const casoId = {{ caso.id }};
+
+                if (confirm('¿Ejecutar este caso de forma automática en Jenkins?')) {
+                    executeAutomatic(casoId);
+                }
+            });
+        }
     });
+
+    function executeAutomatic(casoId) {
+        const btn = document.getElementById('executeAutoBtn');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Enviando a Jenkins...';
+
+        fetch(`/automatizacion/ejecutar/jenkins/${casoId}`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (response.status === 202) {
+                return response.json().then(data => {
+                    showAlert('Test enviado a Jenkins correctamente. ID: ' + data.jenkins_build_number, 'success');
+                    btn.innerHTML = 'En progreso...';
+                    btn.disabled = true;
+                    setTimeout(() => location.reload(), 3000);
+                    return data;
+                });
+            } else {
+                return response.json().then(data => {
+                    throw new Error(data.error || 'Error en la solicitud');
+                });
+            }
+        })
+        .catch(error => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            showAlert(error.message, 'danger');
+        });
+    }
+
+    function showAlert(message, type) {
+        const alertClass = `alert-${type}`;
+        const alert = document.createElement('div');
+        alert.className = `alert ${alertClass} alert-dismissible fade show`;
+        alert.setAttribute('role', 'alert');
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        const container = document.querySelector('.row.mb-4') || document.body;
+        container.insertAdjacentElement('afterend', alert);
+
+        setTimeout(() => {
+            alert.remove();
+        }, 5000);
+    }
 </script>
 {% endblock %}
