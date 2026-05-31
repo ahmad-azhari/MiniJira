@@ -10,7 +10,7 @@ pipeline {
 
     environment {
         RUTA_BASE = "${WORKSPACE}/test_runner"
-        RUTA_PYTHON = "python"
+        RUTA_PYTHON = "python3"
         URL_BACKEND = "http://host.docker.internal:5000"
     }
 

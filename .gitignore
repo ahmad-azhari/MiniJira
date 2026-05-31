@@ -9,3 +9,7 @@ instance/*.db
 .pytest_cache/
 .coverage
 htmlcov/
+Z_Analysis.md
+flask.log
+test_runner/features/*.feature
+nohup.out
