@@ -63,18 +63,23 @@ pipeline {
                         if (contenidoGherkin?.trim()) {
                             def contenidoConSaltos = contenidoGherkin.replaceAll('  +', '\n').trim()
                             writeFile file: rutaFeature, text: contenidoConSaltos
+                            def contenidoConSaltos = contenidoGherkin.replaceAll('  +', '\n').trim()
+                            writeFile file: rutaFeature, text: contenidoConSaltos
                         } else {
+                            error "TEST_SCRIPT no proporcionado. Proporciona contenido Gherkin válido para ejecutar la prueba."
                             error "TEST_SCRIPT no proporcionado. Proporciona contenido Gherkin válido para ejecutar la prueba."
                         }
 
                         def cmd = "\"${RUTA_PYTHON}\" \"${RUTA_BASE}\\ejecutor.py\" \"${rutaFeature}\" ${idTest}"
                         echo "Ejecutando: ${cmd}"
 
+                        def rutaSalida = "${RUTA_BASE}\\salida_${idTest}.txt"
                         bat(
                             label: "Ejecutar Test ${idTest}",
-                            script: cmd,
-                            returnStdout: true
-                        ).trim()
+                            script: "${cmd} > \"${rutaSalida}\" 2>&1"
+                        )
+
+                        def salida = readFile(rutaSalida).trim()
 
                         echo "Salida:"
                         echo salida
