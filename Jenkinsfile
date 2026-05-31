@@ -60,6 +60,8 @@ pipeline {
                         def nombreFeature = "test_${idTest}_${timestamp}.feature"
                         def rutaFeature = "${RUTA_BASE}\\features\\${nombreFeature}"
 
+                        echo "DEBUG: TEST_SCRIPT length=${contenidoGherkin?.length() ?: 0}, valor='${contenidoGherkin}'"
+
                         if (contenidoGherkin?.trim()) {
                             writeFile file: rutaFeature, text: contenidoGherkin
                         } else {
