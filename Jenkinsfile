@@ -9,9 +9,9 @@ pipeline {
     agent any
 
     environment {
-        RUTA_BASE = "${WORKSPACE}\\test_runner"
-        RUTA_PYTHON = "${JENKINS_RUTA_PYTHON}"
-        URL_BACKEND = "http://localhost:5000"
+        RUTA_BASE = "${WORKSPACE}/test_runner"
+        RUTA_PYTHON = "python"
+        URL_BACKEND = "http://host.docker.internal:5000"
     }
 
     parameters {
@@ -27,7 +27,7 @@ pipeline {
             steps {
                 script {
                     echo "Ruta base: ${RUTA_BASE}"
-                    def rutaEjecutor = "${RUTA_BASE}\\ejecutor.py"
+                    def rutaEjecutor = "${RUTA_BASE}/ejecutor.py"
                     if (!fileExists(rutaEjecutor)) {
                         error "ejecutor.py NO encontrado en ${rutaEjecutor}"
                     }
@@ -46,6 +46,8 @@ pipeline {
                     } else {
                         error "TEST_CASE_ID o TEST_CASE_IDS requerido"
                     }
+                    echo "URL Backend: ${URL_BACKEND}"
+                    echo "Ruta Python: ${RUTA_PYTHON}"
                 }
             }
         }
@@ -56,21 +58,21 @@ pipeline {
                     def ejecutarTest = { idTest, contenidoGherkin ->
                         def timestamp = System.currentTimeMillis()
                         def nombreFeature = "test_${idTest}_${timestamp}.feature"
-                        def rutaFeature = "${RUTA_BASE}\\features\\${nombreFeature}"
+                        def rutaFeature = "${RUTA_BASE}/features/${nombreFeature}"
 
                         if (contenidoGherkin?.trim()) {
                             writeFile file: rutaFeature, text: contenidoGherkin
                         } else {
-                            def baseTemp = "${RUTA_BASE}\\features\\temp.feature"
+                            def baseTemp = "${RUTA_BASE}/features/temp.feature"
                             if (fileExists(baseTemp)) {
-                                bat script: "copy /Y \"${baseTemp}\" \"${rutaFeature}\""
+                                sh script: "cp -f '${baseTemp}' '${rutaFeature}'"
                             }
                         }
 
-                        def cmd = "\"${RUTA_PYTHON}\" \"${RUTA_BASE}\\ejecutor.py\" \"${rutaFeature}\" ${idTest}"
+                        def cmd = "${RUTA_PYTHON} ${RUTA_BASE}/ejecutor.py ${rutaFeature} ${idTest}"
                         echo "Ejecutando: ${cmd}"
 
-                        def salida = bat(
+                        def salida = sh(
                             label: "Ejecutar Test ${idTest}",
                             script: cmd,
                             returnStdout: true
