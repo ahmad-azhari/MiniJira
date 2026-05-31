@@ -61,7 +61,8 @@ pipeline {
                         def rutaFeature = "${RUTA_BASE}\\features\\${nombreFeature}"
 
                         if (contenidoGherkin?.trim()) {
-                            writeFile file: rutaFeature, text: contenidoGherkin
+                            def contenidoConSaltos = contenidoGherkin.replaceAll('  +', '\n').trim()
+                            writeFile file: rutaFeature, text: contenidoConSaltos
                         } else {
                             error "TEST_SCRIPT no proporcionado. Proporciona contenido Gherkin válido para ejecutar la prueba."
                         }

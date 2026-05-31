@@ -38,7 +38,7 @@
                 {% for caso in casos %}
                     <tr>
                         <td><strong>{{ caso.nombre }}</strong></td>
-                        <td>{{ caso.objetivo[:50] }}...</td>
+                        <td>{{ (caso.objetivo or '')[:50] }}{% if caso.objetivo and caso.objetivo|length > 50 %}...{% endif %}</td>
                         <td><span class="badge bg-info">{{ caso.tipo.value }}</span></td>
                         <td>
                             <span class="badge bg-{% if caso.prioridad.value == 'CRÍTICA' %}danger{% elif caso.prioridad.value == 'ALTA' %}warning{% elif caso.prioridad.value == 'MEDIA' %}secondary{% else %}success{% endif %}">
