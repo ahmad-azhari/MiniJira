@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  jenkins:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: minijira-jenkins
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    environment:
+      - JENKINS_OPTS=--httpPort=8080
+      - http_proxy=${HTTP_PROXY:-}
+      - https_proxy=${HTTPS_PROXY:-}
+      - no_proxy=${NO_PROXY:-}
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - minijira-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/login || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    container_name: minijira-app
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_APP=run.py
+      - FLASK_ENV=${FLASK_ENV:-development}
+      - FLASK_DEBUG=${FLASK_DEBUG:-False}
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///mini_jira.db}
+      - SECRET_KEY=${SECRET_KEY}
+      - JENKINS_URL=http://jenkins:8080
+      - JENKINS_JOB=${JENKINS_JOB}
+      - JENKINS_USUARIO=${JENKINS_USUARIO}
+      - JENKINS_TOKEN_API=${JENKINS_TOKEN_API}
+      - JENKINS_TOKEN_CONSTRUCCION=${JENKINS_TOKEN_CONSTRUCCION}
+      - JENKINS_TIEMPO_ESPERA=${JENKINS_TIEMPO_ESPERA:-30}
+      - JENKINS_RUTA_PYTHON=${JENKINS_RUTA_PYTHON}
+      - JENKINS_PASSWORD=${JENKINS_PASSWORD}
+      - http_proxy=${HTTP_PROXY:-}
+      - https_proxy=${HTTPS_PROXY:-}
+      - no_proxy=${NO_PROXY:-}
+    volumes:
+      - ./:/app
+      - ./certificado.cer:/app/certificado.cer:ro
+    networks:
+      - minijira-network
+    depends_on:
+      jenkins:
+        condition: service_healthy
+    working_dir: /app
+
+volumes:
+  jenkins_home:
+
+networks:
+  minijira-network:
+    driver: bridge

@@ -154,7 +154,7 @@
                                     </thead>
                                     <tbody>
                                         {% for item in casos_con_estado %}
-                                            <tr>
+                                            <tr data-resultado-id="{% if item.ultimo_resultado %}{{ item.ultimo_resultado.id }}{% endif %}" data-caso-id="{{ item.caso.id }}">
                                                 <td>
                                                     <div class="fw-bold">{{ item.caso.nombre }}</div>
                                                     <small class="text-muted d-block text-truncate" style="max-width: 250px;">{{ item.caso.objetivo or 'Sin objetivo.' }}</small>
@@ -179,16 +179,18 @@
                                                     {% endif %}
                                                 </td>
                                                 <td>
-                                                    {% if item.ultimo_resultado %}
-                                                        <span class="badge bg-{% if item.ultimo_resultado.estado.value == 'pasado' %}success{% elif item.ultimo_resultado.estado.value == 'fallido' %}danger{% elif item.ultimo_resultado.estado.value == 'bloqueado' %}warning{% else %}info{% endif %}">
-                                                            {{ item.ultimo_resultado.estado.value | upper }}
-                                                        </span>
-                                                        <small class="text-muted d-block" style="font-size: 0.75rem;">
-                                                            {{ item.ultimo_resultado.fecha_creacion.strftime('%d/%m/%Y') }}
-                                                        </small>
-                                                    {% else %}
-                                                        <span class="badge badge-unexecuted">SIN EJECUTAR</span>
-                                                    {% endif %}
+                                                    <div class="estado-resultado-container">
+                                                        {% if item.ultimo_resultado %}
+                                                            <span class="badge-estado bg-{% if item.ultimo_resultado.estado.value == 'pasado' %}success{% elif item.ultimo_resultado.estado.value == 'fallido' %}danger{% elif item.ultimo_resultado.estado.value == 'bloqueado' %}warning{% else %}info{% endif %}" data-estado="{{ item.ultimo_resultado.estado.value }}">
+                                                                {{ item.ultimo_resultado.estado.value | upper }}
+                                                            </span>
+                                                            <small class="text-muted d-block" style="font-size: 0.75rem;">
+                                                                {{ item.ultimo_resultado.fecha_creacion.strftime('%d/%m/%Y') }}
+                                                            </small>
+                                                        {% else %}
+                                                            <span class="badge badge-unexecuted">SIN EJECUTAR</span>
+                                                        {% endif %}
+                                                    </div>
                                                 </td>
                                                 <td class="text-end">
                                                     {% if 'miembro' in session.get('roles', []) %}
@@ -238,12 +240,11 @@
 
 {% block scripts_adicionales %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="{{ url_for('static', filename='js/execution-monitor.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ejecucion-dinamica.js') }}"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const statsCiclos = {{ stats_ciclos | tojson }};
 
-        // Manejador del botón de ejecutar ciclo completo
         const executeFullCycleBtn = document.getElementById('executeFullCycleBtn');
         if (executeFullCycleBtn) {
             executeFullCycleBtn.addEventListener('click', function(e) {
@@ -251,7 +252,7 @@
                 const cicloId = this.dataset.cicloId;
 
                 if (confirm('¿Ejecutar todos los casos de este ciclo en Jenkins?')) {
-                    executeFullCycle(cicloId, this);
+                    ejecutarCicloDinamico(cicloId, this);
                 }
             });
         }
@@ -340,56 +341,5 @@
             });
         }
     });
-
-    function executeFullCycle(cicloId, button) {
-        const originalText = button.innerHTML;
-        button.disabled = true;
-        button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Ejecutando...';
-
-        fetch(`/automatizacion/ejecutar/ciclo/jenkins/${cicloId}`, {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => {
-            if (response.status === 202) {
-                return response.json().then(data => {
-                    showNotification(`${data.cantidad} casos enviados a Jenkins`, 'success');
-                    button.innerHTML = 'En ejecución...';
-                    setTimeout(() => location.reload(), 2000);
-                    return data;
-                });
-            } else {
-                return response.json().then(data => {
-                    throw new Error(data.error || 'Error en la solicitud');
-                });
-            }
-        })
-        .catch(error => {
-            button.innerHTML = originalText;
-            button.disabled = false;
-            showNotification(error.message, 'danger');
-        });
-    }
-
-    function showNotification(message, type) {
-        const alertClass = `alert-${type}`;
-        const alert = document.createElement('div');
-        alert.className = `alert ${alertClass} alert-dismissible fade show`;
-        alert.setAttribute('role', 'alert');
-        alert.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-
-        const container = document.querySelector('.container-fluid') || document.body;
-        container.insertBefore(alert, container.firstChild);
-
-        setTimeout(() => {
-            alert.remove();
-        }, 5000);
-    }
 </script>
 {% endblock %}

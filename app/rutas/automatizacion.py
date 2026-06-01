@@ -95,14 +95,17 @@ def ejecutar_ciclo_jenkins(ciclo_id):
         resultado_jenkins = jenkins.lanzar_ciclo(ciclo_id=ciclo_id)
 
         if resultado_jenkins['exito']:
-            resultados_ids = []
+            resultados_mapeados = []
             for caso in ciclo.casos_prueba:
                 resultado = AutomatizacionService.crear_resultado_automatizado(
                     caso_id=caso.id,
                     ciclo_id=ciclo_id,
                     build_number=resultado_jenkins.get('build_number')
                 )
-                resultados_ids.append(resultado.id)
+                resultados_mapeados.append({
+                    'caso_id': caso.id,
+                    'resultado_id': resultado.id
+                })
 
             if request.headers.get('Accept') == 'application/json':
                 return jsonify({
@@ -110,7 +113,7 @@ def ejecutar_ciclo_jenkins(ciclo_id):
                     'cantidad': resultado_jenkins['cantidad'],
                     'jenkins_build_number': resultado_jenkins.get('build_number'),
                     'id_solicitud': resultado_jenkins.get('id_solicitud'),
-                    'resultado_ids': resultados_ids,
+                    'resultados': resultados_mapeados,
                     'mensaje': f"Se enviaron {resultado_jenkins['cantidad']} tests a Jenkins correctamente"
                 }), 202
             else:
@@ -151,6 +154,45 @@ def obtener_estado_ejecucion(resultado_id):
         return jsonify({'error': str(e)}), 404
     except Exception as e:
         current_app.logger.error(f"Error obteniendo estado: {e}", exc_info=True)
+        return jsonify({'error': 'Error interno'}), 500
+
+
+@automatizacion_bp.get('/estados')
+@requerir_autenticacion
+def obtener_estados_lote():
+    try:
+        ids_crudo = request.args.get('ids', '')
+        if not ids_crudo:
+            return jsonify({}), 200
+
+        ids = []
+        for elemento in ids_crudo.split(','):
+            elemento_limpio = elemento.strip()
+            if elemento_limpio.isdigit():
+                ids.append(int(elemento_limpio))
+
+        estados = {}
+        for id_resultado in ids:
+            try:
+                estado = AutomatizacionService.obtener_estado_ejecucion_jenkins(id_resultado)
+                if estado['jenkins_build_number'] and estado['estado_ejecucion'] == 'pendiente':
+                    try:
+                        jenkins = ServicioJenkins()
+                        estado_construccion = jenkins.obtener_build_status(estado['jenkins_build_number'])
+                        if estado_construccion:
+                            estado['jenkins_status'] = estado_construccion
+                    except Exception:
+                        pass
+                estados[id_resultado] = estado
+            except ValueError:
+                pass
+            except Exception as e:
+                current_app.logger.error(f"Error obteniendo estado de lote para ID {id_resultado}: {e}")
+
+        return jsonify(estados), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error en endpoint de estados por lote: {e}", exc_info=True)
         return jsonify({'error': 'Error interno'}), 500
 
 
@@ -217,9 +259,21 @@ def callback_jenkins(caso_id):
             datos=datos
         )
 
-        # Actualizar estado_ejecucion a completado
         resultado.estado_ejecucion = EstadoEjecucionEnum.COMPLETADO
         resultado.tiempo_fin_jenkins = __import__('datetime').datetime.utcnow()
+
+        if resultado.tiempo_inicio_jenkins and resultado.tiempo_fin_jenkins:
+            diferencia_tiempo = resultado.tiempo_fin_jenkins - resultado.tiempo_inicio_jenkins
+            resultado.tiempo_ejecucion = int(diferencia_tiempo.total_seconds())
+
+        if resultado.jenkins_build_number:
+            try:
+                jenkins = ServicioJenkins()
+                logs = jenkins.obtener_build_log(resultado.jenkins_build_number)
+                resultado.output_jenkins = logs if logs else "No se recibieron logs de la consola de Jenkins."
+            except Exception as error_log:
+                current_app.logger.error(f"Error al descargar logs de Jenkins para el build #{resultado.jenkins_build_number}: {error_log}")
+                resultado.output_jenkins = f"Error al descargar logs de Jenkins: {str(error_log)}"
 
         db.session.commit()
 
@@ -231,3 +285,24 @@ def callback_jenkins(caso_id):
     except Exception as e:
         current_app.logger.error(f"Error inesperado callback: {e}", exc_info=True)
         return {'error': 'Error interno'}, 500
+
+
+@automatizacion_bp.get('/logs/<int:resultado_id>')
+@requerir_autenticacion
+def obtener_logs(resultado_id):
+    try:
+        from app.modelos import Resultado
+        resultado = Resultado.query.get_or_404(resultado_id)
+
+        return jsonify({
+            'resultado_id': resultado.id,
+            'output_jenkins': resultado.output_jenkins or '',
+            'jenkins_build_number': resultado.jenkins_build_number,
+            'jenkins_log_url': resultado.jenkins_log_url,
+            'tiempo_inicio': resultado.tiempo_inicio_jenkins.isoformat() if resultado.tiempo_inicio_jenkins else None,
+            'tiempo_fin': resultado.tiempo_fin_jenkins.isoformat() if resultado.tiempo_fin_jenkins else None,
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error obteniendo logs: {e}", exc_info=True)
+        return jsonify({'error': 'Error interno'}), 500

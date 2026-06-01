@@ -16,14 +16,25 @@ from config.constantes import (
 )
 
 def clear_database():
-    """Borra todos los datos excepto usuarios y roles."""
     print("[*] Limpiando base de datos...")
 
-    # Borrar en orden de dependencias (relaciones foráneas)
+    from app.modelos.epica import epica_caso_prueba, epica_ciclo_prueba
+    from app.modelos.caso_prueba import caso_prueba_ciclo
+    from app.modelos.historial import Historial
+
+    db.session.execute(db.delete(epica_caso_prueba))
+    db.session.execute(db.delete(epica_ciclo_prueba))
+    db.session.execute(db.delete(caso_prueba_ciclo))
+
+    Historial.query.delete()
     Defecto.query.delete()
     Resultado.query.delete()
     CicloPrueba.query.delete()
     CasoPrueba.query.delete()
+
+    db.session.execute(db.update(Epica).values(epica_padre_id=None))
+    db.session.commit()
+
     Epica.query.delete()
     Proyecto.query.delete()
 
@@ -31,10 +42,8 @@ def clear_database():
     print("[OK] Base de datos limpiada (usuarios mantenidos)")
 
 def seed_projects_and_epics(usuario):
-    """Crea proyectos, épicas e historias."""
     print("[*] Creando proyectos...")
 
-    # Proyecto 1: Sistema de Login
     proyecto1 = Proyecto(
         nombre="Sistema de Autenticacion",
         descripcion="Implementacion de sistema de login y sesiones",
@@ -45,7 +54,6 @@ def seed_projects_and_epics(usuario):
     db.session.add(proyecto1)
     db.session.flush()
 
-    # Épica 1: Login básico
     epica1 = Epica(
         tipo=TipoEnum.EPIC,
         nombre="Login y Registro de Usuarios",
@@ -59,7 +67,6 @@ def seed_projects_and_epics(usuario):
     db.session.add(epica1)
     db.session.flush()
 
-    # Historia 1.1: Validación de credenciales
     historia1_1 = Epica(
         tipo=TipoEnum.STORY,
         nombre="Validar credenciales de usuario",
@@ -74,7 +81,6 @@ def seed_projects_and_epics(usuario):
     db.session.add(historia1_1)
     db.session.flush()
 
-    # Proyecto 2: Gestión de Tareas
     proyecto2 = Proyecto(
         nombre="Sistema de Gestion de Tareas",
         descripcion="Plataforma de gestion de proyectos y tareas",
@@ -85,7 +91,6 @@ def seed_projects_and_epics(usuario):
     db.session.add(proyecto2)
     db.session.flush()
 
-    # Épica 2: CRUD de Tareas
     epica2 = Epica(
         tipo=TipoEnum.EPIC,
         nombre="CRUD de Tareas",
@@ -99,7 +104,6 @@ def seed_projects_and_epics(usuario):
     db.session.add(epica2)
     db.session.flush()
 
-    # Historia 2.1: Crear tarea
     historia2_1 = Epica(
         tipo=TipoEnum.STORY,
         nombre="Crear nueva tarea",
@@ -114,7 +118,6 @@ def seed_projects_and_epics(usuario):
     db.session.add(historia2_1)
     db.session.flush()
 
-    # Historia 2.2: Listar tareas
     historia2_2 = Epica(
         tipo=TipoEnum.STORY,
         nombre="Listar todas las tareas",
@@ -141,12 +144,10 @@ def seed_projects_and_epics(usuario):
     }
 
 def seed_test_cases(usuario, epicas_dict):
-    """Crea casos de prueba manuales y automatizados."""
     print("[*] Creando casos de prueba...")
 
     casos = []
 
-    # Caso 1: Manual - Validar login con usuario válido
     caso1 = CasoPrueba(
         nombre="Verificar login con credenciales válidas",
         objetivo="Validar que un usuario pueda iniciar sesión con credenciales correctas",
@@ -159,10 +160,10 @@ def seed_test_cases(usuario, epicas_dict):
         tipo=TipoTestEnum.MANUAL,
         usuario_creacion_id=usuario.id
     )
+    caso1.epicas.append(epicas_dict['historia1_1'])
     db.session.add(caso1)
     casos.append(caso1)
 
-    # Caso 2: Manual - Validar login con contraseña inválida
     caso2 = CasoPrueba(
         nombre="Validar rechazo de contraseña incorrecta",
         objetivo="Verificar que el login falla con contraseña incorrecta",
@@ -175,10 +176,10 @@ def seed_test_cases(usuario, epicas_dict):
         tipo=TipoTestEnum.MANUAL,
         usuario_creacion_id=usuario.id
     )
+    caso2.epicas.append(epicas_dict['historia1_1'])
     db.session.add(caso2)
     casos.append(caso2)
 
-    # Caso 3: Automatizado - Crear tarea
     caso3 = CasoPrueba(
         nombre="Crear tarea con título y descripción",
         objetivo="Automatizar la creación de una nueva tarea",
@@ -212,10 +213,10 @@ def seed_test_cases(usuario, epicas_dict):
 """,
         requiere_intento_manual=False
     )
+    caso3.epicas.append(epicas_dict['historia2_1'])
     db.session.add(caso3)
     casos.append(caso3)
 
-    # Caso 4: Automatizado - Listar tareas
     caso4 = CasoPrueba(
         nombre="Listar todas las tareas del usuario",
         objetivo="Automatizar la obtención de tareas",
@@ -247,10 +248,10 @@ def seed_test_cases(usuario, epicas_dict):
 """,
         requiere_intento_manual=False
     )
+    caso4.epicas.append(epicas_dict['historia2_2'])
     db.session.add(caso4)
     casos.append(caso4)
 
-    # Caso 5: Automatizado - Actualizar tarea
     caso5 = CasoPrueba(
         nombre="Actualizar estado de tarea",
         objetivo="Automatizar la actualización de una tarea",
@@ -282,10 +283,10 @@ def seed_test_cases(usuario, epicas_dict):
 """,
         requiere_intento_manual=False
     )
+    caso5.epicas.append(epicas_dict['historia2_1'])
     db.session.add(caso5)
     casos.append(caso5)
 
-    # Caso 6: Automatizado - Eliminar tarea
     caso6 = CasoPrueba(
         nombre="Eliminar una tarea",
         objetivo="Automatizar la eliminación de tarea",
@@ -315,6 +316,7 @@ def seed_test_cases(usuario, epicas_dict):
 """,
         requiere_intento_manual=False
     )
+    caso6.epicas.append(epicas_dict['epica2'])
     db.session.add(caso6)
     casos.append(caso6)
 
@@ -324,12 +326,10 @@ def seed_test_cases(usuario, epicas_dict):
     return casos
 
 def seed_test_cycles(usuario, casos):
-    """Crea ciclos de prueba."""
     print("[*] Creando ciclos de prueba...")
 
     ciclos = []
 
-    # Ciclo 1: Pruebas de Login
     ciclo1 = CicloPrueba(
         nombre="Ciclo 1: Pruebas de Autenticacion",
         descripcion="Pruebas del modulo de login y autenticacion",
@@ -338,12 +338,10 @@ def seed_test_cycles(usuario, casos):
     db.session.add(ciclo1)
     db.session.flush()
 
-    # Agregar casos al ciclo 1 (los manuales)
-    ciclo1.casos_prueba.append(casos[0])  # Caso 1
-    ciclo1.casos_prueba.append(casos[1])  # Caso 2
+    ciclo1.casos_prueba.append(casos[0])
+    ciclo1.casos_prueba.append(casos[1])
     ciclos.append(ciclo1)
 
-    # Ciclo 2: Pruebas de CRUD
     ciclo2 = CicloPrueba(
         nombre="Ciclo 2: Pruebas de Gestion de Tareas",
         descripcion="Pruebas de creacion, lectura, actualizacion y eliminacion de tareas",
@@ -352,14 +350,12 @@ def seed_test_cycles(usuario, casos):
     db.session.add(ciclo2)
     db.session.flush()
 
-    # Agregar casos al ciclo 2 (los automatizados)
-    ciclo2.casos_prueba.append(casos[2])  # Caso 3
-    ciclo2.casos_prueba.append(casos[3])  # Caso 4
-    ciclo2.casos_prueba.append(casos[4])  # Caso 5
-    ciclo2.casos_prueba.append(casos[5])  # Caso 6
+    ciclo2.casos_prueba.append(casos[2])
+    ciclo2.casos_prueba.append(casos[3])
+    ciclo2.casos_prueba.append(casos[4])
+    ciclo2.casos_prueba.append(casos[5])
     ciclos.append(ciclo2)
 
-    # Ciclo 3: Pruebas de Regresión
     ciclo3 = CicloPrueba(
         nombre="Ciclo 3: Pruebas de Regresion",
         descripcion="Pruebas completas de regresion del sistema",
@@ -368,7 +364,6 @@ def seed_test_cycles(usuario, casos):
     db.session.add(ciclo3)
     db.session.flush()
 
-    # Agregar todos los casos al ciclo de regresión
     for caso in casos:
         ciclo3.casos_prueba.append(caso)
     ciclos.append(ciclo3)
@@ -378,12 +373,10 @@ def seed_test_cycles(usuario, casos):
     return ciclos
 
 def seed_defects(usuario, casos):
-    """Crea algunos defectos de prueba."""
     print("[*] Creando defectos...")
 
     defectos = []
 
-    # Defecto 1: Error en validación
     defecto1 = Defecto(
         titulo="Campo de contrasena no valida caracteres especiales",
         descripcion="Cuando el usuario intenta usar caracteres especiales en la contrasena, el sistema rechaza la solicitud. Se esperaba que aceptara @#$% en la contrasena pero muestra error de validacion",
@@ -396,7 +389,6 @@ def seed_defects(usuario, casos):
     db.session.add(defecto1)
     defectos.append(defecto1)
 
-    # Defecto 2: Performance
     defecto2 = Defecto(
         titulo="La API de tareas es lenta con muchos registros",
         descripcion="Cuando hay mas de 1000 tareas, la API tarda mas de 5 segundos en responder. Se esperaba una respuesta en menos de 1 segundo.",
@@ -413,12 +405,73 @@ def seed_defects(usuario, casos):
     print(f"[OK] Creados {len(defectos)} defectos")
     return defectos
 
+def seed_jenkins_results(usuario, casos, ciclos):
+    print("[*] Sembrando ejemplos de ejecuciones de Jenkins...")
+
+    resultado1 = Resultado(
+        caso_prueba_id=casos[2].id, # Crear tarea
+        ciclo_prueba_id=ciclos[1].id, # CRUD tareas
+        estado=EstadoResultadoEnum.PASADO,
+        entorno='Automatizado',
+        resultado_obtenido='Crear tarea válida',
+        notas='Feature: Crear Tarea\nScenario: Crear una tarea válida → pasado',
+        modo_ejecucion=ModoEjecucionEnum.AUTOMATIZADO,
+        estado_ejecucion=EstadoEjecucionEnum.COMPLETADO,
+        jenkins_build_number=1,
+        jenkins_log_url='http://jenkins:8080/job/Pipeline/1/console',
+        tiempo_inicio_jenkins=datetime.utcnow() - timedelta(minutes=10),
+        tiempo_fin_jenkins=datetime.utcnow() - timedelta(minutes=9, seconds=45),
+        tiempo_ejecucion=15,
+        numero_intentos=1,
+        output_jenkins="""Started by user admin
+Rebuilding in port 5000...
+Running python behaving executor.py...
+Feature: Crear Tarea
+  Scenario: Crear una tarea válida
+    Given el usuario está autenticado -> passed
+    When envía una solicitud POST a "/api/tareas" -> passed
+    Then la respuesta debe tener código 201 -> passed
+1 scenario passed, 0 failed
+Sending callback post request to MiniJira...
+Finished: SUCCESS
+"""
+    )
+    db.session.add(resultado1)
+
+    resultado2 = Resultado(
+        caso_prueba_id=casos[3].id, # Listar tareas
+        ciclo_prueba_id=ciclos[1].id, # CRUD tareas
+        estado=EstadoResultadoEnum.FALLIDO,
+        entorno='Automatizado',
+        resultado_obtenido='Obtener todas las tareas sin token',
+        notas='Feature: Listar Tareas\nScenario: Listar tareas sin autenticación → fallido',
+        modo_ejecucion=ModoEjecucionEnum.AUTOMATIZADO,
+        estado_ejecucion=EstadoEjecucionEnum.COMPLETADO,
+        jenkins_build_number=2,
+        jenkins_log_url='http://jenkins:8080/job/Pipeline/2/console',
+        tiempo_inicio_jenkins=datetime.utcnow() - timedelta(minutes=5),
+        tiempo_fin_jenkins=datetime.utcnow() - timedelta(minutes=4, seconds=48),
+        tiempo_ejecucion=12,
+        numero_intentos=1,
+        output_jenkins="""Started by user admin
+Running behaves...
+Feature: Listar Tareas
+  Scenario: Listar tareas sin autenticación
+    When envía una solicitud GET a "/api/tareas" sin autenticación -> passed
+    Then la respuesta debe tener código 401 -> failed (expected 401, got 200)
+0 scenario passed, 1 failed
+Sending callback post request to MiniJira...
+Finished: FAILURE
+"""
+    )
+    db.session.add(resultado2)
+    db.session.commit()
+    print("[OK] Ejemplos de ejecuciones de Jenkins creados")
+
 def main():
-    """Ejecuta el seed de la base de datos."""
     app = crear_app()
 
     with app.app_context():
-        # Obtener el usuario admin
         usuario = Usuario.query.filter_by(nombre_usuario='admin').first()
 
         if not usuario:
@@ -426,38 +479,24 @@ def main():
             sys.exit(1)
 
         print(f"\n{'='*50}")
-        print("SEED DE BASE DE DATOS")
+        print("SEED DE BASE DE DATOS MEJORADO")
         print(f"{'='*50}\n")
 
-        # Limpiar datos
         clear_database()
 
-        # Poblar proyectos y épicas
         epicas_dict = seed_projects_and_epics(usuario)
 
-        # Poblar casos de prueba
         casos = seed_test_cases(usuario, epicas_dict)
 
-        # Poblar ciclos de prueba
         ciclos = seed_test_cycles(usuario, casos)
 
-        # Poblar defectos
         defectos = seed_defects(usuario, casos)
+
+        seed_jenkins_results(usuario, casos, ciclos)
 
         print(f"\n{'='*50}")
         print("SEED COMPLETADO CON EXITO")
         print(f"{'='*50}")
-        print(f"\nResumen:")
-        print(f"  - Proyectos: 2")
-        print(f"  - Epicas: 2")
-        print(f"  - Historias: 5")
-        print(f"  - Casos de Prueba: {len(casos)} (2 manuales, 4 automatizados)")
-        print(f"  - Ciclos de Prueba: {len(ciclos)}")
-        print(f"  - Defectos: {len(defectos)}")
-        print(f"\nUsuario de prueba:")
-        print(f"  - Usuario: admin")
-        print(f"  - Rol: admin")
-        print()
 
 if __name__ == '__main__':
     main()

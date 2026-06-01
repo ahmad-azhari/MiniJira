@@ -35,7 +35,51 @@ class AutomatizacionService:
         if id_solicitud:
             existente = Resultado.query.filter_by(id_solicitud=id_solicitud).first()
             if existente:
-                current_app.logger.info(f"Solicitud duplicada detectada: {id_solicitud}")
+                if existente.estado_ejecucion in (EstadoEjecucionEnum.COMPLETADO, EstadoEjecucionEnum.ERROR):
+                    current_app.logger.info(f"Solicitud duplicada detectada: {id_solicitud}")
+                    return existente
+
+                current_app.logger.info(f"Actualizando resultado pendiente para id_solicitud: {id_solicitud}")
+
+                estado_str = datos.get('estado_prueba', '').upper()
+                estado_map = {
+                    'PASADO': EstadoResultadoEnum.PASADO,
+                    'FALLIDO': EstadoResultadoEnum.FALLIDO,
+                    'BLOQUEADO': EstadoResultadoEnum.BLOQUEADO,
+                    'EN_PROGRESO': EstadoResultadoEnum.EN_PROGRESO,
+                }
+
+                if estado_str not in estado_map:
+                    raise ValueError(f"Estado no válido: {estado_str}")
+
+                existente.estado = estado_map[estado_str]
+                existente.resultado_obtenido = datos.get('resultado_obtenido', '')
+                existente.notas = datos.get('notes', '') or datos.get('notas', '')
+                if datos.get('archivo'):
+                    existente.archivo_adjunto = datos.get('archivo')
+                if datos.get('jenkins_build_number'):
+                    existente.jenkins_build_number = datos.get('jenkins_build_number')
+                if datos.get('jenkins_log_url'):
+                    existente.jenkins_log_url = datos.get('jenkins_log_url')
+
+                tiempo_inicio_crudo = datos.get('tiempo_inicio_jenkins')
+                if tiempo_inicio_crudo:
+                    try:
+                        existente.tiempo_inicio_jenkins = datetime.utcfromtimestamp(float(tiempo_inicio_crudo) / 1000.0)
+                    except Exception:
+                        pass
+
+                existente.tiempo_fin_jenkins = datetime.utcnow()
+
+                if existente.tiempo_inicio_jenkins and existente.tiempo_fin_jenkins:
+                    diferencia_tiempo = existente.tiempo_fin_jenkins - existente.tiempo_inicio_jenkins
+                    existente.tiempo_ejecucion = int(diferencia_tiempo.total_seconds())
+
+                if datos.get('numero_intentos'):
+                    existente.numero_intentos = datos.get('numero_intentos')
+
+                existente.json_respuesta_jenkins = datos
+                db.session.commit()
                 return existente
 
         estado_str = datos.get('estado_prueba', '').upper()
@@ -48,6 +92,28 @@ class AutomatizacionService:
 
         if estado_str not in estado_map:
             raise ValueError(f"Estado no válido: {estado_str}")
+
+        tiempo_inicio_crudo = datos.get('tiempo_inicio_jenkins')
+        fecha_inicio = None
+        if tiempo_inicio_crudo:
+            try:
+                fecha_inicio = datetime.utcfromtimestamp(float(tiempo_inicio_crudo) / 1000.0)
+            except Exception:
+                pass
+
+        tiempo_fin_crudo = datos.get('tiempo_fin_jenkins')
+        fecha_fin = None
+        if tiempo_fin_crudo:
+            try:
+                fecha_fin = datetime.utcfromtimestamp(float(tiempo_fin_crudo) / 1000.0)
+            except Exception:
+                pass
+        else:
+            fecha_fin = datetime.utcnow()
+
+        segundos_ejecucion = None
+        if fecha_inicio and fecha_fin:
+            segundos_ejecucion = int((fecha_fin - fecha_inicio).total_seconds())
 
         resultado = Resultado(
             caso_prueba_id=caso_id,
@@ -63,8 +129,9 @@ class AutomatizacionService:
             estado_ejecucion=EstadoEjecucionEnum.COMPLETADO,
             jenkins_build_number=datos.get('jenkins_build_number'),
             jenkins_log_url=datos.get('jenkins_log_url'),
-            tiempo_inicio_jenkins=datos.get('tiempo_inicio_jenkins'),
-            tiempo_fin_jenkins=datos.get('tiempo_fin_jenkins'),
+            tiempo_inicio_jenkins=fecha_inicio,
+            tiempo_fin_jenkins=fecha_fin,
+            tiempo_ejecucion=segundos_ejecucion,
             numero_intentos=datos.get('numero_intentos', 1),
             json_respuesta_jenkins=datos,
         )
@@ -90,6 +157,11 @@ class AutomatizacionService:
         if not resultado:
             raise ValueError(f"Resultado {resultado_id} no existe")
 
+        tiempo_ejecucion = resultado.tiempo_ejecucion
+        if tiempo_ejecucion is None and resultado.tiempo_inicio_jenkins and resultado.tiempo_fin_jenkins:
+            delta = resultado.tiempo_fin_jenkins - resultado.tiempo_inicio_jenkins
+            tiempo_ejecucion = int(delta.total_seconds())
+
         return {
             'resultado_id': resultado.id,
             'estado_ejecucion': resultado.estado_ejecucion.value if resultado.estado_ejecucion else None,
@@ -99,6 +171,7 @@ class AutomatizacionService:
             'jenkins_log_url': resultado.jenkins_log_url,
             'tiempo_inicio': resultado.tiempo_inicio_jenkins.isoformat() if resultado.tiempo_inicio_jenkins else None,
             'tiempo_fin': resultado.tiempo_fin_jenkins.isoformat() if resultado.tiempo_fin_jenkins else None,
+            'tiempo_ejecucion': tiempo_ejecucion,
             'numero_intentos': resultado.numero_intentos,
             'fecha_creacion': resultado.fecha_creacion.isoformat(),
             'resultado_obtenido': resultado.resultado_obtenido[:100] if resultado.resultado_obtenido else None,
