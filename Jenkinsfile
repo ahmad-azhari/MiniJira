@@ -6,12 +6,12 @@ Map parseJsonSafe(String json) {
 }
 
 pipeline {
-    agent { label 'windows' }
+    agent any
 
     environment {
-        RUTA_BASE = "${WORKSPACE}\\test_runner"
-        RUTA_PYTHON = "python"
-        URL_BACKEND = "http://localhost:5000"
+        RUTA_BASE = "/minijira/test_runner"
+        RUTA_PYTHON = "python3"
+        URL_BACKEND = "http://app:5000"
     }
 
     parameters {
@@ -27,7 +27,7 @@ pipeline {
             steps {
                 script {
                     echo "Ruta base: ${RUTA_BASE}"
-                    def rutaEjecutor = "${RUTA_BASE}\\ejecutor.py"
+                    def rutaEjecutor = "${RUTA_BASE}/ejecutor.py"
                     if (!fileExists(rutaEjecutor)) {
                         error "ejecutor.py NO encontrado en ${rutaEjecutor}"
                     }
@@ -58,25 +58,33 @@ pipeline {
                     def ejecutarTest = { idTest, contenidoGherkin ->
                         def timestamp = System.currentTimeMillis()
                         def nombreFeature = "test_${idTest}_${timestamp}.feature"
-                        def rutaFeature = "${RUTA_BASE}\\features\\${nombreFeature}"
+                        def rutaFeature = "${RUTA_BASE}/features/${nombreFeature}"
 
                         if (contenidoGherkin?.trim()) {
                             def contenidoConSaltos = contenidoGherkin.replaceAll('  +', '\n').trim()
                             writeFile file: rutaFeature, text: contenidoConSaltos
-                            def contenidoConSaltos = contenidoGherkin.replaceAll('  +', '\n').trim()
-                            writeFile file: rutaFeature, text: contenidoConSaltos
                         } else {
-                            error "TEST_SCRIPT no proporcionado. Proporciona contenido Gherkin válido para ejecutar la prueba."
-                            error "TEST_SCRIPT no proporcionado. Proporciona contenido Gherkin válido para ejecutar la prueba."
+                            def respuestaScript = httpRequest(
+                                httpMode: 'GET',
+                                url: "${URL_BACKEND}/automatizacion/api/casos/${idTest}/script",
+                                validResponseCodes: '200',
+                                timeout: 15
+                            )
+                            def datosScript = parseJsonSafe(respuestaScript.content)
+                            def scriptObtenido = datosScript['script_prueba'] ?: ''
+                            if (!scriptObtenido.trim()) {
+                                error "El caso ${idTest} no tiene script Gherkin definido en MiniJira."
+                            }
+                            writeFile file: rutaFeature, text: scriptObtenido
                         }
 
-                        def cmd = "\"${RUTA_PYTHON}\" \"${RUTA_BASE}\\ejecutor.py\" \"${rutaFeature}\" ${idTest}"
+                        def cmd = "${RUTA_PYTHON} ${RUTA_BASE}/ejecutor.py ${rutaFeature} ${idTest}"
                         echo "Ejecutando: ${cmd}"
 
-                        def rutaSalida = "${RUTA_BASE}\\salida_${idTest}.txt"
-                        bat(
+                        def rutaSalida = "${RUTA_BASE}/salida_${idTest}.txt"
+                        sh(
                             label: "Ejecutar Test ${idTest}",
-                            script: "${cmd} > \"${rutaSalida}\" 2>&1"
+                            script: "${cmd} > ${rutaSalida} 2>&1"
                         )
 
                         def salida = readFile(rutaSalida).trim()

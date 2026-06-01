@@ -303,6 +303,21 @@ def obtener_logs(resultado_id):
             'tiempo_fin': resultado.tiempo_fin_jenkins.isoformat() if resultado.tiempo_fin_jenkins else None,
         }), 200
 
+
     except Exception as e:
         current_app.logger.error(f"Error obteniendo logs: {e}", exc_info=True)
+        return jsonify({'error': 'Error interno'}), 500
+
+
+@automatizacion_bp.get('/api/casos/<int:caso_id>/script')
+def obtener_script_caso(caso_id):
+    try:
+        caso = CasoPrueba.query.get_or_404(caso_id)
+        return jsonify({
+            'caso_id': caso.id,
+            'nombre': caso.nombre,
+            'script_prueba': caso.script_prueba or ''
+        }), 200
+    except Exception as e:
+        current_app.logger.error(f"Error obteniendo script del caso {caso_id}: {e}", exc_info=True)
         return jsonify({'error': 'Error interno'}), 500
