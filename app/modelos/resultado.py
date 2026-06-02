@@ -9,7 +9,7 @@ class Resultado(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     caso_prueba_id = db.Column(db.Integer, db.ForeignKey('caso_prueba.id'), nullable=False)
     ciclo_prueba_id = db.Column(db.Integer, db.ForeignKey('ciclo_prueba.id'), nullable=True)
-    id_solicitud = db.Column(db.String(36), unique=True, nullable=True)
+    id_solicitud = db.Column(db.String(80), unique=True, nullable=True)
 
     estado = db.Column(db.Enum(EstadoResultadoEnum, values_callable=lambda x: [e.value for e in x]), default=EstadoResultadoEnum.PASADO)
     entorno = db.Column(db.String(100), nullable=True)

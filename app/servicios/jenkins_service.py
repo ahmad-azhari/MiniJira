@@ -28,52 +28,46 @@ class ServicioJenkins:
             )
             if respuesta.status_code == 200:
                 self.crear_job_si_no_existe()
+                self.sincronizar_pipeline_desde_jenkinsfile()
                 return True
             return False
         except Exception as e:
             current_app.logger.error(f"Fallo conexión Jenkins: {e}")
             return False
 
-    def crear_job_si_no_existe(self):
-        try:
-            url_job = f"{self.configuracion['url']}/job/{self.configuracion['job']}/api/json"
-            respuesta = self.sesion.get(
-                url_job,
-                timeout=self.configuracion['tiempo_espera'],
-                verify=self._verificacion_ssl
+    def _ruta_jenkinsfile(self):
+        import os
+
+        posibles_directorios = [
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            os.path.abspath(os.getcwd()),
+            os.path.join(os.path.abspath(os.getcwd()), 'MiniJira'),
+        ]
+        for directorio in posibles_directorios:
+            ruta = os.path.join(directorio, 'Jenkinsfile')
+            if os.path.exists(ruta):
+                return ruta
+        return None
+
+    def _contenido_jenkinsfile_para_jenkins(self):
+        from xml.sax.saxutils import escape
+
+        ruta_jenkinsfile = self._ruta_jenkinsfile()
+        if not ruta_jenkinsfile:
+            current_app.logger.error(
+                "No se encontró el archivo Jenkinsfile en ninguna de las ubicaciones buscadas."
             )
-            if respuesta.status_code == 200:
-                return
+            return None
 
-            current_app.logger.info(f"El Job '{self.configuracion['job']}' no existe en Jenkins. Creándolo automáticamente...")
+        with open(ruta_jenkinsfile, 'r', encoding='utf-8') as archivo:
+            contenido = archivo.read()
 
-            import os
-            from xml.sax.saxutils import escape
+        contenido = contenido.replace('http://localhost:5000', 'http://app:5000')
+        return escape(contenido)
 
-            ruta_jenkinsfile = None
-            posibles_directorios = [
-                os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-                os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                os.path.abspath(os.getcwd()),
-                os.path.join(os.path.abspath(os.getcwd()), 'MiniJira')
-            ]
-            for d in posibles_directorios:
-                posible_ruta = os.path.join(d, 'Jenkinsfile')
-                if os.path.exists(posible_ruta):
-                    ruta_jenkinsfile = posible_ruta
-                    break
-
-            if not ruta_jenkinsfile:
-                current_app.logger.error("No se encontró el archivo Jenkinsfile en ninguna de las ubicaciones buscadas.")
-                return
-
-            with open(ruta_jenkinsfile, 'r', encoding='utf-8') as f:
-                contenido_jenkinsfile = f.read()
-
-            contenido_jenkinsfile = contenido_jenkinsfile.replace('http://localhost:5000', 'http://app:5000')
-            jenkinsfile_escapado = escape(contenido_jenkinsfile)
-
-            xml_config = f"""<?xml version='1.1' encoding='UTF-8'?>
+    def _xml_config_pipeline(self, jenkinsfile_escapado: str) -> str:
+        return f"""<?xml version='1.1' encoding='UTF-8'?>
 <flow-definition plugin="workflow-job">
   <description>Pipeline automatizado creado por MiniJira</description>
   <keepDependencies>false</keepDependencies>
@@ -116,27 +110,81 @@ class ServicioJenkins:
   <disabled>false</disabled>
 </flow-definition>
 """
-            campo_crumb, valor_crumb = self.obtener_crumb()
-            encabezados = {'Content-Type': 'application/xml'}
-            if campo_crumb and valor_crumb:
-                encabezados[campo_crumb] = valor_crumb
 
-            url_creacion = f"{self.configuracion['url']}/createItem?name={self.configuracion['job']}"
-            r_creacion = self.sesion.post(
-                url_creacion,
-                data=xml_config.encode('utf-8'),
-                headers=encabezados,
+    def _enviar_config_job(self, xml_config: str, crear: bool) -> bool:
+        campo_crumb, valor_crumb = self.obtener_crumb()
+        encabezados = {'Content-Type': 'application/xml'}
+        if campo_crumb and valor_crumb:
+            encabezados[campo_crumb] = valor_crumb
+
+        if crear:
+            url = f"{self.configuracion['url']}/createItem?name={self.configuracion['job']}"
+        else:
+            url = f"{self.configuracion['url']}/job/{self.configuracion['job']}/config.xml"
+
+        respuesta = self.sesion.post(
+            url,
+            data=xml_config.encode('utf-8'),
+            headers=encabezados,
+            timeout=self.configuracion['tiempo_espera'],
+            verify=self._verificacion_ssl,
+        )
+        return respuesta.status_code in (200, 201)
+
+    def crear_job_si_no_existe(self):
+        try:
+            url_job = f"{self.configuracion['url']}/job/{self.configuracion['job']}/api/json"
+            respuesta = self.sesion.get(
+                url_job,
                 timeout=self.configuracion['tiempo_espera'],
                 verify=self._verificacion_ssl
             )
+            if respuesta.status_code == 200:
+                return
 
-            if r_creacion.status_code in (200, 201):
+            current_app.logger.info(
+                f"El Job '{self.configuracion['job']}' no existe en Jenkins. Creándolo automáticamente..."
+            )
+
+            jenkinsfile_escapado = self._contenido_jenkinsfile_para_jenkins()
+            if not jenkinsfile_escapado:
+                return
+
+            xml_config = self._xml_config_pipeline(jenkinsfile_escapado)
+            if self._enviar_config_job(xml_config, crear=True):
                 current_app.logger.info(f"Job '{self.configuracion['job']}' creado exitosamente en Jenkins!")
             else:
-                current_app.logger.error(f"Fallo al crear Job en Jenkins: {r_creacion.status_code} - {r_creacion.text}")
+                current_app.logger.error("Fallo al crear Job en Jenkins.")
 
         except Exception as e:
             current_app.logger.error(f"Error en crear_job_si_no_existe: {e}")
+
+    def sincronizar_pipeline_desde_jenkinsfile(self):
+        try:
+            url_job = f"{self.configuracion['url']}/job/{self.configuracion['job']}/api/json"
+            respuesta = self.sesion.get(
+                url_job,
+                timeout=self.configuracion['tiempo_espera'],
+                verify=self._verificacion_ssl,
+            )
+            if respuesta.status_code != 200:
+                return
+
+            jenkinsfile_escapado = self._contenido_jenkinsfile_para_jenkins()
+            if not jenkinsfile_escapado:
+                return
+
+            xml_config = self._xml_config_pipeline(jenkinsfile_escapado)
+            if self._enviar_config_job(xml_config, crear=False):
+                current_app.logger.info(
+                    f"Pipeline del job '{self.configuracion['job']}' sincronizado desde Jenkinsfile."
+                )
+            else:
+                current_app.logger.warning(
+                    f"No se pudo actualizar el pipeline del job '{self.configuracion['job']}'."
+                )
+        except Exception as e:
+            current_app.logger.error(f"Error sincronizando pipeline Jenkins: {e}")
 
     def obtener_crumb(self):
         try:
@@ -180,13 +228,33 @@ class ServicioJenkins:
         if not ciclo:
             raise ValueError(f"Ciclo {ciclo_id} no existe")
 
-        ids_test = [str(tc.id) for tc in ciclo.casos_prueba]
-        if not ids_test:
+        if ciclo.es_solo_manual():
             return {
                 'exito': False,
+                'error': 'El ciclo solo contiene pruebas manuales y no puede ser ejecutado con Jenkins',
                 'cantidad': 0,
                 'builds': []
             }
+
+        casos_automatizados = [
+            caso for caso in ciclo.casos_prueba
+            if caso.tiene_script_valido()
+        ]
+        
+        if not casos_automatizados:
+            return {
+                'exito': False,
+                'error': 'El ciclo no tiene pruebas automatizadas válidas',
+                'cantidad': 0,
+                'builds': []
+            }
+        
+        orden_casos = {3: 0, 4: 1, 5: 2, 6: 3}
+        casos_ordenados = sorted(
+            casos_automatizados,
+            key=lambda caso: (orden_casos.get(caso.id, 99), caso.id),
+        )
+        ids_test = [str(caso.id) for caso in casos_ordenados]
 
         id_solicitud = str(uuid.uuid4())
 
@@ -202,7 +270,9 @@ class ServicioJenkins:
             'cantidad': len(ids_test) if build_number else 0,
             'build_number': build_number,
             'id_solicitud': id_solicitud,
-            'builds': [build_number] if build_number else []
+            'builds': [build_number] if build_number else [],
+            'casos_manuales': ciclo.tiene_pruebas_manuales(),
+            'casos_automatizados': ciclo.tiene_pruebas_automatizadas(),
         }
 
     def _construir_con_parametros(self, carga: dict) -> bool:

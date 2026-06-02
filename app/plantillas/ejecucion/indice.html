@@ -67,7 +67,6 @@
                                         {% if stat.total > 0 %}
                                             <div class="progress-bar bg-success" style="width: {{ (stat.pasados / stat.total) * 100 }}%" title="Pasados: {{ stat.pasados }}"></div>
                                             <div class="progress-bar bg-danger" style="width: {{ (stat.fallidos / stat.total) * 100 }}%" title="Fallidos: {{ stat.fallidos }}"></div>
-                                            <div class="progress-bar bg-warning" style="width: {{ (stat.bloqueados / stat.total) * 100 }}%" title="Bloqueados: {{ stat.bloqueados }}"></div>
                                             <div class="progress-bar bg-info" style="width: {{ (stat.en_progreso / stat.total) * 100 }}%" title="En Progreso: {{ stat.en_progreso }}"></div>
                                             <div class="progress-bar bg-light" style="width: {{ (stat.pendientes / stat.total) * 100 }}%" title="Sin Ejecutar: {{ stat.pendientes }}"></div>
                                         {% else %}
@@ -126,8 +125,18 @@
                                         class="btn btn-success me-2"
                                         id="executeFullCycleBtn"
                                         data-ciclo-id="{{ ciclo_seleccionado.id }}"
+                                        data-es-solo-manual="{{ ciclo_seleccionado.es_solo_manual() }}"
+                                        data-tiene-manuales="{{ ciclo_seleccionado.tiene_pruebas_manuales() }}"
+                                        data-tiene-automatizados="{{ ciclo_seleccionado.tiene_pruebas_automatizadas() }}"
                                         style="margin-bottom: 0.5rem;">
                                     <i class="bi bi-play-fill"></i> Ejecutar Ciclo Completo
+                                </button>
+                                <button type="button"
+                                        class="btn btn-outline-primary me-2 btn-ver-resumen-ciclo {% if not ciclo_tiene_resumen_auto %}d-none{% endif %}"
+                                        data-ver-ciclo-id="{{ ciclo_seleccionado.id }}"
+                                        data-ciclo-nombre="{{ ciclo_seleccionado.nombre }}"
+                                        style="margin-bottom: 0.5rem;">
+                                    Ver resumen del ciclo
                                 </button>
                                 {% endif %}
                                 <span class="badge bg-light text-dark p-2 fs-6">
@@ -146,7 +155,6 @@
                                         <tr>
                                             <th>Caso de Prueba</th>
                                             <th>Prioridad</th>
-                                            <th>Tipo</th>
                                             <th>Modo</th>
                                             <th>Último Estado</th>
                                             <th class="text-end">Acciones</th>
@@ -154,7 +162,11 @@
                                     </thead>
                                     <tbody>
                                         {% for item in casos_con_estado %}
-                                            <tr data-resultado-id="{% if item.ultimo_resultado %}{{ item.ultimo_resultado.id }}{% endif %}" data-caso-id="{{ item.caso.id }}">
+                                            <tr data-resultado-id="{% if item.ultimo_resultado %}{{ item.ultimo_resultado.id }}{% endif %}"
+                                                data-caso-id="{{ item.caso.id }}"
+                                                data-ciclo-id="{{ ciclo_seleccionado.id }}"
+                                                data-tipo-caso="{{ item.caso.tipo.value }}"
+                                                data-ejecucion-pendiente="{% if item.ejecucion_activa %}true{% else %}false{% endif %}">
                                                 <td>
                                                     <div class="fw-bold">{{ item.caso.nombre }}</div>
                                                     <small class="text-muted d-block text-truncate" style="max-width: 250px;">{{ item.caso.objetivo or 'Sin objetivo.' }}</small>
@@ -163,9 +175,6 @@
                                                     <span class="badge bg-{% if item.caso.prioridad.value == 'alta' %}danger{% elif item.caso.prioridad.value == 'media' %}warning{% else %}success{% endif %}">
                                                         {{ item.caso.prioridad.value }}
                                                     </span>
-                                                </td>
-                                                <td>
-                                                    <span class="badge bg-light text-dark">{{ item.caso.tipo.value }}</span>
                                                 </td>
                                                 <td>
                                                     {% if item.caso.tipo.value == 'automatizado' %}
@@ -180,8 +189,14 @@
                                                 </td>
                                                 <td>
                                                     <div class="estado-resultado-container">
-                                                        {% if item.ultimo_resultado %}
-                                                            <span class="badge-estado bg-{% if item.ultimo_resultado.estado.value == 'pasado' %}success{% elif item.ultimo_resultado.estado.value == 'fallido' %}danger{% elif item.ultimo_resultado.estado.value == 'bloqueado' %}warning{% else %}info{% endif %}" data-estado="{{ item.ultimo_resultado.estado.value }}">
+                                                        {% if item.ejecucion_activa %}
+                                                            <span class="badge bg-info">
+                                                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                                                EN PROGRESO
+                                                            </span>
+                                                            <small class="text-muted d-block" style="font-size: 0.75rem;">Jenkins...</small>
+                                                        {% elif item.ultimo_resultado %}
+                                                            <span class="badge bg-{% if item.ultimo_resultado.estado.value == 'pasado' %}success{% elif item.ultimo_resultado.estado.value == 'fallido' %}danger{% elif item.ultimo_resultado.estado.value == 'en_progreso' %}warning{% else %}info{% endif %}">
                                                                 {{ item.ultimo_resultado.estado.value | upper }}
                                                             </span>
                                                             <small class="text-muted d-block" style="font-size: 0.75rem;">
@@ -207,6 +222,14 @@
                                                                         data-ciclo-id="{{ ciclo_seleccionado.id }}"
                                                                         style="font-size: 0.85rem;">
                                                                     Automático
+                                                                </button>
+                                                            {% endif %}
+                                                            {% if item.ultimo_resultado %}
+                                                                <button type="button"
+                                                                        class="btn btn-outline-secondary btn-ver-resultado {% if item.ejecucion_activa %}d-none{% endif %}"
+                                                                        style="font-size: 0.85rem;"
+                                                                        title="Ver resultado y logs">
+                                                                    Ver
                                                                 </button>
                                                             {% endif %}
                                                         </div>
@@ -250,10 +273,26 @@
             executeFullCycleBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 const cicloId = this.dataset.cicloId;
+                const esSoloManual = this.dataset.esSoloManual === 'True';
+                const tieneManuales = this.dataset.tieneManuales === 'True';
+                const tieneAutomatizados = this.dataset.tieneAutomatizados === 'True';
 
-                if (confirm('¿Ejecutar todos los casos de este ciclo en Jenkins?')) {
-                    ejecutarCicloDinamico(cicloId, this);
+                if (esSoloManual) {
+                    alert('Este ciclo solo contiene pruebas manuales y no puede ser ejecutado con Jenkins.');
+                    return;
                 }
+
+                if (tieneManuales && tieneAutomatizados) {
+                    if (!confirm('Este ciclo contiene pruebas manuales y automatizadas. Solo se ejecutarán las pruebas automatizadas. ¿Desea continuar?')) {
+                        return;
+                    }
+                } else {
+                    if (!confirm('¿Ejecutar todos los casos automatizados de este ciclo en Jenkins?')) {
+                        return;
+                    }
+                }
+
+                ejecutarCicloDinamico(cicloId, this);
             });
         }
 
@@ -263,7 +302,6 @@
             const labels = statsCiclos.map(item => item.nombre);
             const pasadosData = statsCiclos.map(item => item.pasados);
             const fallidosData = statsCiclos.map(item => item.fallidos);
-            const bloqueadosData = statsCiclos.map(item => item.bloqueados);
             const enProgresoData = statsCiclos.map(item => item.en_progreso);
             const pendientesData = statsCiclos.map(item => item.pendientes);
 
@@ -282,12 +320,6 @@
                             label: 'Fallidos',
                             data: fallidosData,
                             backgroundColor: '#ef4444',
-                            borderRadius: 4
-                        },
-                        {
-                            label: 'Bloqueados',
-                            data: bloqueadosData,
-                            backgroundColor: '#f59e0b',
                             borderRadius: 4
                         },
                         {

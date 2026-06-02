@@ -32,13 +32,53 @@ class CicloPrueba(db.Model):
 
     TRANSICIONES_VALIDAS = {
         EstadoEnum.NUEVO: [EstadoEnum.EN_PROGRESO],
-        EstadoEnum.EN_PROGRESO: [EstadoEnum.TERMINADO, EstadoEnum.NUEVO],
+        EstadoEnum.EN_PROGRESO: [EstadoEnum.PASADO, EstadoEnum.FALLIDO, EstadoEnum.NUEVO],
+        EstadoEnum.PASADO: [EstadoEnum.EN_PROGRESO],
+        EstadoEnum.FALLIDO: [EstadoEnum.EN_PROGRESO],
         EstadoEnum.TERMINADO: [EstadoEnum.EN_PROGRESO],
     }
 
     def puede_cambiar_a(self, nuevo_estado):
         transiciones = self.TRANSICIONES_VALIDAS.get(self.estado, [])
         return nuevo_estado in transiciones
+
+    def actualizar_estado_desde_resultados(self):
+        from config.constantes import EstadoResultadoEnum, EstadoEnum
+        
+        if not self.resultados:
+            return
+        
+        resultados_por_caso = {}
+        for res in self.resultados:
+            if res.caso_prueba_id not in resultados_por_caso or res.fecha_creacion > resultados_por_caso[res.caso_prueba_id].fecha_creacion:
+                resultados_por_caso[res.caso_prueba_id] = res
+        
+        if not resultados_por_caso:
+            return
+        
+        todos_tienen_resultados = len(resultados_por_caso) == len(self.casos_prueba)
+        
+        if todos_tienen_resultados:
+            todos_pasaron = all(res.estado == EstadoResultadoEnum.PASADO for res in resultados_por_caso.values())
+            
+            if todos_pasaron:
+                if self.puede_cambiar_a(EstadoEnum.PASADO):
+                    self.estado = EstadoEnum.PASADO
+            else:
+                if self.puede_cambiar_a(EstadoEnum.FALLIDO):
+                    self.estado = EstadoEnum.FALLIDO
+        elif self.estado == EstadoEnum.NUEVO:
+            if self.puede_cambiar_a(EstadoEnum.EN_PROGRESO):
+                self.estado = EstadoEnum.EN_PROGRESO
+
+    def tiene_pruebas_automatizadas(self):
+        return any(caso.tipo.value == 'automatizado' for caso in self.casos_prueba)
+
+    def tiene_pruebas_manuales(self):
+        return any(caso.tipo.value == 'manual' for caso in self.casos_prueba)
+
+    def es_solo_manual(self):
+        return all(caso.tipo.value == 'manual' for caso in self.casos_prueba)
 
     def __repr__(self):
         return f'<CicloPrueba {self.nombre}>'

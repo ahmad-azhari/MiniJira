@@ -1,19 +1,33 @@
-function abrirModalResultado(resultadoId) {
-    const modal = new bootstrap.Modal(document.getElementById('modalResultadoEjecucion'));
-    const contenedor = document.getElementById('modalResultadoEjecucion');
+function formatearNotas(notas) {
+    if (!notas || !String(notas).trim()) {
+        return 'Sin notas';
+    }
+    return String(notas).replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+}
 
-    fetch(`/automatizacion/estado/${resultadoId}`)
-        .then(response => {
-            if (!response.ok) throw new Error('Error al obtener estado');
-            return response.json();
-        })
-        .then(estado => {
-            fetch(`/automatizacion/logs/${resultadoId}`)
-                .then(response => response.json())
-                .then(datos => {
-                    llenarModalResultado(estado, datos);
-                    modal.show();
-                });
+function abrirModalResultado(resultadoId, opciones = {}) {
+    const modalEl = document.getElementById('modalResultadoEjecucion');
+    if (!modalEl) {
+        console.error('Modal #modalResultadoEjecucion no encontrado');
+        return;
+    }
+
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    prepararModalCargando(opciones.casoNombre);
+
+    Promise.all([
+        fetch(`/automatizacion/estado/${resultadoId}`).then(r => {
+            if (!r.ok) throw new Error('Error al obtener estado');
+            return r.json();
+        }),
+        fetch(`/automatizacion/logs/${resultadoId}`).then(r => {
+            if (!r.ok) throw new Error('Error al obtener logs');
+            return r.json();
+        }),
+    ])
+        .then(([estado, logs]) => {
+            llenarModalResultado(estado, logs, opciones);
+            modal.show();
         })
         .catch(error => {
             console.error('Error:', error);
@@ -21,51 +35,91 @@ function abrirModalResultado(resultadoId) {
         });
 }
 
-function llenarModalResultado(estado, datos) {
+function prepararModalCargando(casoNombre) {
+    document.getElementById('modalCasoNombre').textContent = casoNombre || '';
+    document.getElementById('modalEstado').textContent = 'CARGANDO...';
+    document.getElementById('modalEstado').className = 'badge bg-secondary';
+    document.getElementById('modalResultadoObtenido').textContent = 'Cargando...';
+    document.getElementById('modalNotas').textContent = 'Cargando...';
+    document.getElementById('modalLogs').textContent = 'Cargando logs...';
+    document.getElementById('modalBuildNumber').textContent = '...';
+    document.getElementById('modalNumeroIntentos').textContent = '...';
+    document.getElementById('modalTiempoInicio').textContent = '...';
+    document.getElementById('modalDuracion').textContent = '...';
+    document.getElementById('modalEstadoEjecucion').textContent = '...';
+    document.getElementById('modalUrlJenkins').textContent = '...';
+
+    const tabResultado = document.getElementById('tabResultado');
+    if (tabResultado) {
+        bootstrap.Tab.getOrCreateInstance(tabResultado).show();
+    }
+}
+
+function llenarModalResultado(estado, datos, opciones = {}) {
     const estadoColores = {
-        'pasado': 'success',
-        'fallido': 'danger',
-        'bloqueado': 'warning',
-        'en_progreso': 'info'
+        pasado: 'success',
+        fallido: 'danger',
+        bloqueado: 'warning',
+        en_progreso: 'info',
     };
 
-    document.getElementById('modalEstado').textContent = (estado.estado_resultado || 'N/A').toUpperCase();
-    document.getElementById('modalEstado').className = `badge bg-${estadoColores[estado.estado_resultado] || 'secondary'}`;
+    const estadoResultado = (estado.estado_resultado || '').toLowerCase();
+    document.getElementById('modalCasoNombre').textContent =
+        opciones.casoNombre || estado.caso_nombre || `Resultado #${estado.resultado_id || ''}`;
 
-    document.getElementById('modalResultadoObtenido').textContent = estado.resultado_obtenido || 'N/A';
-    document.getElementById('modalNotas').textContent = 'N/A';
+    document.getElementById('modalEstado').textContent = (estadoResultado || 'N/A').toUpperCase();
+    document.getElementById('modalEstado').className =
+        `badge bg-${estadoColores[estadoResultado] || 'secondary'}`;
+
+    document.getElementById('modalResultadoObtenido').textContent =
+        estado.resultado_obtenido || 'N/A';
+    document.getElementById('modalNotas').textContent = formatearNotas(estado.notas);
 
     document.getElementById('modalBuildNumber').textContent = estado.jenkins_build_number || 'N/A';
     document.getElementById('modalNumeroIntentos').textContent = estado.numero_intentos || '1';
 
     if (estado.tiempo_inicio) {
-        const fecha = new Date(estado.tiempo_inicio);
-        document.getElementById('modalTiempoInicio').textContent = fecha.toLocaleString('es-ES');
+        document.getElementById('modalTiempoInicio').textContent =
+            new Date(estado.tiempo_inicio).toLocaleString('es-ES');
     } else {
         document.getElementById('modalTiempoInicio').textContent = 'N/A';
     }
 
-    if (estado.tiempo_ejecucion !== null && estado.tiempo_ejecucion !== undefined) {
-        document.getElementById('modalDuracion').textContent = estado.tiempo_ejecucion + ' seg';
-    } else {
+    if (estado.tiempo_fin) {
+        const fin = new Date(estado.tiempo_fin);
+        const inicioTxt = document.getElementById('modalTiempoInicio').textContent;
+        if (inicioTxt !== 'N/A') {
+            document.getElementById('modalDuracion').textContent =
+                estado.tiempo_ejecucion != null
+                    ? `${estado.tiempo_ejecucion.toFixed(2)} seg`
+                    : 'Finalizado';
+        }
+    } else if (estado.tiempo_ejecucion !== null && estado.tiempo_ejecucion !== undefined) {
+        document.getElementById('modalDuracion').textContent = `${estado.tiempo_ejecucion.toFixed(2)} seg`;
+    } else if (['pendiente', 'en_progreso'].includes((estado.estado_ejecucion || '').toLowerCase())) {
         document.getElementById('modalDuracion').textContent = 'En progreso...';
+    } else {
+        document.getElementById('modalDuracion').textContent = 'N/A';
     }
 
-    document.getElementById('modalEstadoEjecucion').textContent = (estado.estado_ejecucion || 'N/A').toUpperCase();
+    document.getElementById('modalEstadoEjecucion').textContent =
+        (estado.estado_ejecucion || 'N/A').toUpperCase();
 
     if (estado.jenkins_log_url) {
-        document.getElementById('modalUrlJenkins').innerHTML = `<a href="${estado.jenkins_log_url}" target="_blank">${estado.jenkins_log_url}</a>`;
+        document.getElementById('modalUrlJenkins').innerHTML =
+            `<a href="${estado.jenkins_log_url}" target="_blank" rel="noopener">${estado.jenkins_log_url}</a>`;
     } else {
         document.getElementById('modalUrlJenkins').textContent = 'N/A';
     }
 
-    document.getElementById('modalLogs').textContent = datos.output_jenkins || 'Sin logs disponibles';
+    document.getElementById('modalLogs').textContent =
+        datos.output_jenkins || 'Sin logs disponibles';
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const btnCopiar = document.getElementById('btnCopiarLogs');
     if (btnCopiar) {
-        btnCopiar.addEventListener('click', function() {
+        btnCopiar.addEventListener('click', function () {
             const logs = document.getElementById('modalLogs').textContent;
             navigator.clipboard.writeText(logs).then(() => {
                 mostrarNotificacion('Logs copiados al portapapeles', 'success');
@@ -77,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const btnDescargar = document.getElementById('btnDescargarLogs');
     if (btnDescargar) {
-        btnDescargar.addEventListener('click', function() {
+        btnDescargar.addEventListener('click', function () {
             const logs = document.getElementById('modalLogs').textContent;
             const blob = new Blob([logs], { type: 'text/plain' });
             const url = window.URL.createObjectURL(blob);
@@ -93,9 +147,13 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function mostrarNotificacion(mensaje, tipo) {
-    const alertClass = `alert-${tipo}`;
+    if (typeof mostrarNotificacionDinamica === 'function') {
+        mostrarNotificacionDinamica(mensaje, tipo);
+        return;
+    }
+
     const alerta = document.createElement('div');
-    alerta.className = `alert ${alertClass} alert-dismissible fade show`;
+    alerta.className = `alert alert-${tipo} alert-dismissible fade show`;
     alerta.setAttribute('role', 'alert');
     alerta.innerHTML = `
         ${mensaje}
@@ -105,7 +163,5 @@ function mostrarNotificacion(mensaje, tipo) {
     const contenedor = document.querySelector('main') || document.body;
     contenedor.insertBefore(alerta, contenedor.firstChild);
 
-    setTimeout(() => {
-        alerta.remove();
-    }, 5000);
+    setTimeout(() => alerta.remove(), 5000);
 }

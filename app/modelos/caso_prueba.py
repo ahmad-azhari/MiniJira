@@ -66,7 +66,7 @@ class CasoPrueba(db.Model):
 
     def tiene_script_valido(self):
         if not self.es_automatizado():
-            return True
+            return False
         return bool(self.script_prueba and self.script_prueba.strip())
 
     def __repr__(self):

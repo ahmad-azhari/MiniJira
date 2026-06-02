@@ -145,7 +145,7 @@ def reporte_defectos():
 
     usuarios_asignacion = {}
     for defecto in defectos_asignados:
-        usuario = defecto.usuario_asignado
+        usuario = defecto.asignado_a
         if usuario:
             if usuario.nombre_usuario not in usuarios_asignacion:
                 usuarios_asignacion[usuario.nombre_usuario] = 0

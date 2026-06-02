@@ -28,6 +28,9 @@ def ejecutar_feature(ruta_feature: str):
         id_ejecucion = uuid.uuid4().hex[:8]
         ruta_resultado_json = directorio_resultados / f"resultado_{id_ejecucion}.json"
 
+        entorno = os.environ.copy()
+        entorno.setdefault('URL_BACKEND', 'http://app:5000')
+
         proceso = subprocess.run(
             [
                 sys.executable, '-m', 'behave',
@@ -36,6 +39,7 @@ def ejecutar_feature(ruta_feature: str):
                 '-o', str(ruta_resultado_json)
             ],
             cwd=directorio_base,
+            env=entorno,
             capture_output=True,
             text=True,
             timeout=300

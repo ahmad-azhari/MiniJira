@@ -1,21 +1,72 @@
-.env
-usuarios.txt
-venv/
+# Python
 __pycache__/
-*.pyc
-.DS_Store
-instance/*.db
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
 *.egg-info/
+dist/
+build/
+.eggs/
 .pytest_cache/
 .coverage
 htmlcov/
-Z_Analysis.md
+.tox/
+.nox/
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Flask
+instance/
+.webassets-cache
 flask.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+instance/*.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+nohup.out
+
+# Docker
+.dockerignore
+
+# Jenkins
 test_runner/features/*.feature
 test_runner/test_output.json
-nohup.out
-certificado.cer
+test_runner/resultados/
+
+# Analysis
+Z_Analysis.md
 SSL_Analysis.md
 Proyect_Analysis.md
 TrialsPlan_Analysis.md
-test_runner/resultados
+
+# Certificates
+certificado.cer
+
+# Other
+usuarios.txt

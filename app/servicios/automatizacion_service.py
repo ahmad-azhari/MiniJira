@@ -8,6 +8,52 @@ import uuid
 
 class AutomatizacionService:
     @staticmethod
+    def _map_estado_resultado(estado_str: str) -> EstadoResultadoEnum:
+        estado_map = {
+            'PASADO': EstadoResultadoEnum.PASADO,
+            'FALLIDO': EstadoResultadoEnum.FALLIDO,
+            'EN_PROGRESO': EstadoResultadoEnum.EN_PROGRESO,
+        }
+        clave = (estado_str or '').upper()
+        if clave not in estado_map:
+            raise ValueError(f"Estado no válido: {estado_str}")
+        return estado_map[clave]
+
+    @staticmethod
+    def _fusionar_escenario_en_resultado(resultado: Resultado, datos: dict) -> Resultado:
+        nuevo_estado = AutomatizacionService._map_estado_resultado(
+            datos.get('estado_prueba', '')
+        )
+        escenario = (datos.get('resultado_obtenido') or '').strip()
+        notas_nuevas = (datos.get('notes', '') or datos.get('notas', '') or '').strip()
+
+        if escenario:
+            if resultado.resultado_obtenido and escenario not in resultado.resultado_obtenido:
+                resultado.resultado_obtenido = f"{resultado.resultado_obtenido} | {escenario}"
+            elif not resultado.resultado_obtenido:
+                resultado.resultado_obtenido = escenario
+
+        if notas_nuevas:
+            separador = '\n\n---\n\n' if resultado.notas else ''
+            if notas_nuevas not in (resultado.notas or ''):
+                resultado.notas = f"{resultado.notas or ''}{separador}{notas_nuevas}"
+
+        if nuevo_estado == EstadoResultadoEnum.FALLIDO:
+            resultado.estado = EstadoResultadoEnum.FALLIDO
+        elif resultado.estado != EstadoResultadoEnum.FALLIDO:
+            resultado.estado = nuevo_estado
+
+        if datos.get('jenkins_build_number'):
+            resultado.jenkins_build_number = datos.get('jenkins_build_number')
+        if datos.get('jenkins_log_url'):
+            resultado.jenkins_log_url = datos.get('jenkins_log_url')
+
+        resultado.json_respuesta_jenkins = datos
+        resultado.tiempo_fin_jenkins = datetime.utcnow()
+        db.session.commit()
+        return resultado
+
+    @staticmethod
     def validar_caso_prueba(caso_id: int) -> CasoPrueba:
         caso = CasoPrueba.query.get(caso_id)
         if not caso:
@@ -34,25 +80,29 @@ class AutomatizacionService:
         id_solicitud = datos.get('id_solicitud')
         if id_solicitud:
             existente = Resultado.query.filter_by(id_solicitud=id_solicitud).first()
+            if not existente and ':' not in str(id_solicitud):
+                existente = Resultado.query.filter_by(
+                    id_solicitud=f"{id_solicitud}:{caso_id}"
+                ).first()
+            if not existente and ciclo_id:
+                existente = (
+                    Resultado.query.filter_by(
+                        caso_prueba_id=caso_id,
+                        ciclo_prueba_id=ciclo_id,
+                        estado_ejecucion=EstadoEjecucionEnum.PENDIENTE,
+                    )
+                    .order_by(Resultado.id.desc())
+                    .first()
+                )
             if existente:
                 if existente.estado_ejecucion in (EstadoEjecucionEnum.COMPLETADO, EstadoEjecucionEnum.ERROR):
-                    current_app.logger.info(f"Solicitud duplicada detectada: {id_solicitud}")
-                    return existente
+                    return AutomatizacionService._fusionar_escenario_en_resultado(existente, datos)
 
                 current_app.logger.info(f"Actualizando resultado pendiente para id_solicitud: {id_solicitud}")
 
-                estado_str = datos.get('estado_prueba', '').upper()
-                estado_map = {
-                    'PASADO': EstadoResultadoEnum.PASADO,
-                    'FALLIDO': EstadoResultadoEnum.FALLIDO,
-                    'BLOQUEADO': EstadoResultadoEnum.BLOQUEADO,
-                    'EN_PROGRESO': EstadoResultadoEnum.EN_PROGRESO,
-                }
-
-                if estado_str not in estado_map:
-                    raise ValueError(f"Estado no válido: {estado_str}")
-
-                existente.estado = estado_map[estado_str]
+                existente.estado = AutomatizacionService._map_estado_resultado(
+                    datos.get('estado_prueba', '')
+                )
                 existente.resultado_obtenido = datos.get('resultado_obtenido', '')
                 existente.notas = datos.get('notes', '') or datos.get('notas', '')
                 if datos.get('archivo'):
@@ -79,19 +129,11 @@ class AutomatizacionService:
                     existente.numero_intentos = datos.get('numero_intentos')
 
                 existente.json_respuesta_jenkins = datos
+                existente.estado_ejecucion = EstadoEjecucionEnum.COMPLETADO
                 db.session.commit()
                 return existente
 
-        estado_str = datos.get('estado_prueba', '').upper()
-        estado_map = {
-            'PASADO': EstadoResultadoEnum.PASADO,
-            'FALLIDO': EstadoResultadoEnum.FALLIDO,
-            'BLOQUEADO': EstadoResultadoEnum.BLOQUEADO,
-            'EN_PROGRESO': EstadoResultadoEnum.EN_PROGRESO,
-        }
-
-        if estado_str not in estado_map:
-            raise ValueError(f"Estado no válido: {estado_str}")
+        estado_enum = AutomatizacionService._map_estado_resultado(datos.get('estado_prueba', ''))
 
         tiempo_inicio_crudo = datos.get('tiempo_inicio_jenkins')
         fecha_inicio = None
@@ -118,7 +160,7 @@ class AutomatizacionService:
         resultado = Resultado(
             caso_prueba_id=caso_id,
             ciclo_prueba_id=ciclo_id,
-            estado=estado_map[estado_str],
+            estado=estado_enum,
             entorno=datos.get('entorno', 'Automatizado'),
             resultado_obtenido=datos.get('resultado_obtenido', ''),
             notas=datos.get('notas', ''),
@@ -141,10 +183,93 @@ class AutomatizacionService:
 
         current_app.logger.info(
             f"Resultado procesado: caso={caso_id}, "
-            f"estado={estado_str}, ciclo={ciclo_id}, id_solicitud={id_solicitud}"
+            f"estado={estado_enum.value}, ciclo={ciclo_id}, id_solicitud={id_solicitud}"
         )
 
         return resultado
+
+    @staticmethod
+    def obtener_resumen_ejecucion_ciclo(ciclo_id: int, solicitud_id: str = None) -> dict:
+        ciclo = AutomatizacionService.validar_ciclo_prueba(ciclo_id)
+        consulta = Resultado.query.filter_by(
+            ciclo_prueba_id=ciclo_id,
+            modo_ejecucion=ModoEjecucionEnum.AUTOMATIZADO,
+        )
+
+        if solicitud_id:
+            consulta = consulta.filter(Resultado.id_solicitud.like(f"{solicitud_id}:%"))
+        else:
+            ultimo = consulta.order_by(Resultado.fecha_creacion.desc()).first()
+            if not ultimo or not ultimo.id_solicitud or ':' not in ultimo.id_solicitud:
+                return {
+                    'ciclo_id': ciclo_id,
+                    'ciclo_nombre': ciclo.nombre,
+                    'casos': [],
+                    'resumen': {'pasados': 0, 'fallidos': 0, 'total': 0},
+                    'log_completo': '',
+                }
+            base_solicitud = ultimo.id_solicitud.split(':', 1)[0]
+            consulta = consulta.filter(Resultado.id_solicitud.like(f"{base_solicitud}:%"))
+
+        resultados = consulta.order_by(Resultado.caso_prueba_id.asc()).all()
+        casos = []
+        pasados = 0
+        fallidos = 0
+        bloques_log = []
+        build_number = None
+        log_url = None
+
+        for resultado in resultados:
+            estado_valor = resultado.estado.value if resultado.estado else 'desconocido'
+            if resultado.estado == EstadoResultadoEnum.PASADO:
+                pasados += 1
+            elif resultado.estado == EstadoResultadoEnum.FALLIDO:
+                fallidos += 1
+
+            if resultado.jenkins_build_number and not build_number:
+                build_number = resultado.jenkins_build_number
+            if resultado.jenkins_log_url and not log_url:
+                log_url = resultado.jenkins_log_url
+
+            nombre_caso = resultado.caso_prueba.nombre if resultado.caso_prueba else f"Caso {resultado.caso_prueba_id}"
+            casos.append({
+                'resultado_id': resultado.id,
+                'caso_id': resultado.caso_prueba_id,
+                'caso_nombre': nombre_caso,
+                'estado': estado_valor,
+                'estado_ejecucion': resultado.estado_ejecucion.value if resultado.estado_ejecucion else None,
+                'resultado_obtenido': resultado.resultado_obtenido or '',
+                'notas': resultado.notas or '',
+            })
+            bloques_log.append(
+                f"=== {nombre_caso} ({estado_valor.upper()}) ===\n"
+                f"{resultado.notas or 'Sin notas'}"
+            )
+
+        log_jenkins = ''
+        for resultado in resultados:
+            if resultado.output_jenkins:
+                log_jenkins = resultado.output_jenkins
+                break
+
+        log_completo = '\n\n'.join(bloques_log)
+        if log_jenkins:
+            log_completo = f"--- Consola Jenkins (build #{build_number or '?'}) ---\n{log_jenkins}\n\n--- Detalle por caso ---\n\n{log_completo}"
+
+        return {
+            'ciclo_id': ciclo_id,
+            'ciclo_nombre': ciclo.nombre,
+            'id_solicitud': solicitud_id or (resultados[0].id_solicitud.split(':', 1)[0] if resultados and resultados[0].id_solicitud and ':' in resultados[0].id_solicitud else None),
+            'jenkins_build_number': build_number,
+            'jenkins_log_url': log_url,
+            'casos': casos,
+            'resumen': {
+                'pasados': pasados,
+                'fallidos': fallidos,
+                'total': len(casos),
+            },
+            'log_completo': log_completo,
+        }
 
     @staticmethod
     def obtener_casos_ciclo(ciclo_id: int) -> list:
@@ -160,10 +285,12 @@ class AutomatizacionService:
         tiempo_ejecucion = resultado.tiempo_ejecucion
         if tiempo_ejecucion is None and resultado.tiempo_inicio_jenkins and resultado.tiempo_fin_jenkins:
             delta = resultado.tiempo_fin_jenkins - resultado.tiempo_inicio_jenkins
-            tiempo_ejecucion = int(delta.total_seconds())
+            tiempo_ejecucion = delta.total_seconds()
 
         return {
             'resultado_id': resultado.id,
+            'caso_id': resultado.caso_prueba_id,
+            'caso_nombre': resultado.caso_prueba.nombre if resultado.caso_prueba else None,
             'estado_ejecucion': resultado.estado_ejecucion.value if resultado.estado_ejecucion else None,
             'estado_resultado': resultado.estado.value if resultado.estado else None,
             'modo_ejecucion': resultado.modo_ejecucion.value if resultado.modo_ejecucion else None,
@@ -174,7 +301,8 @@ class AutomatizacionService:
             'tiempo_ejecucion': tiempo_ejecucion,
             'numero_intentos': resultado.numero_intentos,
             'fecha_creacion': resultado.fecha_creacion.isoformat(),
-            'resultado_obtenido': resultado.resultado_obtenido[:100] if resultado.resultado_obtenido else None,
+            'resultado_obtenido': resultado.resultado_obtenido or '',
+            'notas': resultado.notas or '',
         }
 
     @staticmethod

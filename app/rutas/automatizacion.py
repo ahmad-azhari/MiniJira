@@ -28,15 +28,24 @@ def ejecutar_test_jenkins(caso_id):
                 'error': 'No se puede conectar a Jenkins'
             }), 503
 
+        ciclo_id = request.args.get('ciclo_id', type=int)
+        if not ciclo_id and request.is_json:
+            datos_peticion = request.get_json(silent=True) or {}
+            ciclo_id = datos_peticion.get('ciclo_id')
+
         resultado_jenkins = jenkins.lanzar_test(
             caso_id=caso_id,
-            script_test=caso.script_prueba
+            script_test=caso.script_prueba,
+            ciclo_id=ciclo_id,
         )
 
         if resultado_jenkins['exito']:
+            id_solicitud = resultado_jenkins.get('id_solicitud')
             resultado = AutomatizacionService.crear_resultado_automatizado(
                 caso_id=caso_id,
-                build_number=resultado_jenkins.get('build_number')
+                ciclo_id=ciclo_id,
+                build_number=resultado_jenkins.get('build_number'),
+                id_solicitud=f"{id_solicitud}:{caso_id}" if id_solicitud else None,
             )
 
             if request.headers.get('Accept') == 'application/json':
@@ -96,11 +105,14 @@ def ejecutar_ciclo_jenkins(ciclo_id):
 
         if resultado_jenkins['exito']:
             resultados_mapeados = []
-            for caso in ciclo.casos_prueba:
+            id_solicitud_ciclo = resultado_jenkins.get('id_solicitud')
+            casos_a_ejecutar = [c for c in ciclo.casos_prueba if c.tiene_script_valido()]
+            for caso in casos_a_ejecutar:
                 resultado = AutomatizacionService.crear_resultado_automatizado(
                     caso_id=caso.id,
                     ciclo_id=ciclo_id,
-                    build_number=resultado_jenkins.get('build_number')
+                    build_number=resultado_jenkins.get('build_number'),
+                    id_solicitud=f"{id_solicitud_ciclo}:{caso.id}" if id_solicitud_ciclo else None,
                 )
                 resultados_mapeados.append({
                     'caso_id': caso.id,
@@ -264,7 +276,7 @@ def callback_jenkins(caso_id):
 
         if resultado.tiempo_inicio_jenkins and resultado.tiempo_fin_jenkins:
             diferencia_tiempo = resultado.tiempo_fin_jenkins - resultado.tiempo_inicio_jenkins
-            resultado.tiempo_ejecucion = int(diferencia_tiempo.total_seconds())
+            resultado.tiempo_ejecucion = diferencia_tiempo.total_seconds()
 
         if resultado.jenkins_build_number:
             try:
@@ -285,6 +297,20 @@ def callback_jenkins(caso_id):
     except Exception as e:
         current_app.logger.error(f"Error inesperado callback: {e}", exc_info=True)
         return {'error': 'Error interno'}, 500
+
+
+@automatizacion_bp.get('/ciclo/<int:ciclo_id>/resumen')
+@requerir_autenticacion
+def obtener_resumen_ciclo(ciclo_id):
+    try:
+        solicitud_id = request.args.get('solicitud_id', '').strip() or None
+        resumen = AutomatizacionService.obtener_resumen_ejecucion_ciclo(ciclo_id, solicitud_id)
+        return jsonify(resumen), 200
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 404
+    except Exception as e:
+        current_app.logger.error(f"Error obteniendo resumen de ciclo: {e}", exc_info=True)
+        return jsonify({'error': 'Error interno'}), 500
 
 
 @automatizacion_bp.get('/logs/<int:resultado_id>')

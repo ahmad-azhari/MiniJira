@@ -18,10 +18,26 @@ def indice():
 @requerir_autenticacion
 def detalle(ciclo_id):
     ciclo = CicloPrueba.query.get_or_404(ciclo_id)
+    ciclo.actualizar_estado_desde_resultados()
+    db.session.commit()
+    
     casos_disponibles = CasoPrueba.query.filter(
         ~CasoPrueba.ciclos_prueba.any(CicloPrueba.id == ciclo_id)
     ).all()
-    return render_template('ciclos_prueba/detalle.html', ciclo=ciclo, casos_disponibles=casos_disponibles, resultados=ciclo.resultados)
+    ciclo_tiene_resumen_auto = any(
+        r.modo_ejecucion
+        and r.modo_ejecucion.value == 'automatizado'
+        and r.estado_ejecucion
+        and r.estado_ejecucion.value == 'completado'
+        for r in ciclo.resultados
+    )
+    return render_template(
+        'ciclos_prueba/detalle.html',
+        ciclo=ciclo,
+        casos_disponibles=casos_disponibles,
+        resultados=ciclo.resultados,
+        ciclo_tiene_resumen_auto=ciclo_tiene_resumen_auto,
+    )
 
 
 @ciclos_prueba_bp.route('/nuevo', methods=['GET', 'POST'])

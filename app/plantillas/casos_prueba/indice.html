@@ -50,6 +50,11 @@
                             <a href="{{ url_for('casos_prueba_bp.detalle', caso_id=caso.id) }}" class="btn btn-sm btn-outline-primary">Ver</a>
                             {% if 'miembro' in session.get('roles', []) %}
                             <a href="{{ url_for('casos_prueba_bp.editar', caso_id=caso.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                            {% if caso.tipo.value == 'automatizado' and caso.tiene_script_valido() %}
+                            <button type="button" class="btn btn-sm btn-success btn-ejecutar-individual" data-caso-id="{{ caso.id }}" data-caso-nombre="{{ caso.nombre }}">
+                                <i class="bi bi-play-fill"></i> Jenkins
+                            </button>
+                            {% endif %}
                             {% endif %}
                         </td>
                     </tr>
@@ -60,4 +65,19 @@
 {% else %}
     <div class="alert alert-info">No hay casos de prueba aún.</div>
 {% endif %}
+{% endblock %}
+
+{% block scripts_adicionales %}
+<script src="{{ url_for('static', filename='js/modal-ejecucion-individual.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.btn-ejecutar-individual').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const casoId = this.dataset.casoId;
+                const casoNombre = this.dataset.casoNombre;
+                abrirModalEjecucionIndividual(casoId, casoNombre);
+            });
+        });
+    });
+</script>
 {% endblock %}

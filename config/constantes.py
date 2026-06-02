@@ -4,6 +4,8 @@ import enum
 class EstadoEnum(str, enum.Enum):
     NUEVO = "nuevo"
     EN_PROGRESO = "en_progreso"
+    PASADO = "pasado"
+    FALLIDO = "fallido"
     TERMINADO = "terminado"
 
 
@@ -16,7 +18,6 @@ class EstadoDefectoEnum(str, enum.Enum):
 class EstadoResultadoEnum(str, enum.Enum):
     PASADO = "pasado"
     FALLIDO = "fallido"
-    BLOQUEADO = "bloqueado"
     EN_PROGRESO = "en_progreso"
 
 

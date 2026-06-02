@@ -209,7 +209,7 @@ def seed_test_cases(usuario, epicas_dict):
       | campo | valor |
       | descripcion | Sin título |
     Then la respuesta debe tener código 400
-    And la respuesta debe contener "error"
+    And la respuesta debe contener una "error"
 """,
         requiere_intento_manual=False
     )
@@ -266,9 +266,9 @@ def seed_test_cases(usuario, epicas_dict):
         script_prueba="""Feature: Actualizar Tarea
 
   Scenario: Cambiar estado de tarea a completada
-    Given existe una tarea con ID "1"
+    Given existe una tarea
     And el usuario está autenticado
-    When envía una solicitud PUT a "/api/tareas/1" con:
+    When envía una solicitud PUT a la tarea con:
       | campo | valor |
       | estado | completada |
     Then la respuesta debe tener código 200
@@ -301,11 +301,11 @@ def seed_test_cases(usuario, epicas_dict):
         script_prueba="""Feature: Eliminar Tarea
 
   Scenario: Eliminar tarea existente
-    Given existe una tarea con ID "1"
+    Given existe una tarea
     And el usuario está autenticado
-    When envía una solicitud DELETE a "/api/tareas/1"
+    When envía una solicitud DELETE a la tarea
     Then la respuesta debe tener código 204
-    When envía una solicitud GET a "/api/tareas/1"
+    When envía una solicitud GET a la tarea
     Then la respuesta debe tener código 404
 
   Scenario: Eliminar tarea sin permisos

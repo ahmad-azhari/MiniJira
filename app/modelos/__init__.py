@@ -6,6 +6,7 @@ from app.modelos.ciclo_prueba import CicloPrueba
 from app.modelos.resultado import Resultado
 from app.modelos.defecto import Defecto
 from app.modelos.historial import Historial
+from app.modelos.tarea import Tarea
 
 __all__ = [
     'Usuario',
@@ -17,4 +18,5 @@ __all__ = [
     'Resultado',
     'Defecto',
     'Historial',
+    'Tarea',
 ]

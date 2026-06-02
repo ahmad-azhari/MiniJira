@@ -19,8 +19,17 @@
         <button type="button"
                 class="btn btn-success btn-sm"
                 id="executeJenkinsCycleBtn"
-                data-ciclo-id="{{ ciclo.id }}">
+                data-ciclo-id="{{ ciclo.id }}"
+                data-es-solo-manual="{{ ciclo.es_solo_manual() }}"
+                data-tiene-manuales="{{ ciclo.tiene_pruebas_manuales() }}"
+                data-tiene-automatizados="{{ ciclo.tiene_pruebas_automatizadas() }}">
             <i class="bi bi-play-fill"></i> Ejecutar con Jenkins
+        </button>
+        <button type="button"
+                class="btn btn-outline-primary btn-sm btn-ver-resumen-ciclo {% if not ciclo_tiene_resumen_auto %}d-none{% endif %}"
+                data-ver-ciclo-id="{{ ciclo.id }}"
+                data-ciclo-nombre="{{ ciclo.nombre }}">
+            Ver resumen del ciclo
         </button>
         {% endif %}
         {% if 'miembro' in session.get('roles', []) %}
@@ -30,8 +39,6 @@
         <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
             Eliminar
         </button>
-
-        <!-- Delete Modal -->
         <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
             <div class="modal-dialog text-start">
                 <div class="modal-content">
@@ -129,14 +136,17 @@
                 </thead>
                 <tbody>
                     {% for resultado in resultados %}
-                        <tr>
+                        <tr data-resultado-id="{{ resultado.id }}"
+                            data-caso-id="{{ resultado.caso_prueba.id }}"
+                            data-ciclo-id="{{ ciclo.id }}"
+                            data-ejecucion-pendiente="{% if resultado.estado_ejecucion and resultado.estado_ejecucion.value in ['pendiente', 'en_progreso'] %}true{% else %}false{% endif %}">
                             <td>{{ resultado.caso_prueba.nombre }}</td>
                             <td>
                                 {% if resultado.estado.value == 'Pasado' %}
                                     <span class="badge bg-success">{{ resultado.estado.value }}</span>
                                 {% elif resultado.estado.value == 'Fallido' %}
                                     <span class="badge bg-danger">{{ resultado.estado.value }}</span>
-                                {% elif resultado.estado.value == 'Bloqueado' %}
+                                {% elif resultado.estado.value == 'En progreso' %}
                                     <span class="badge bg-warning">{{ resultado.estado.value }}</span>
                                 {% else %}
                                     <span class="badge bg-secondary">{{ resultado.estado.value }}</span>
@@ -147,6 +157,13 @@
                             <td>{{ resultado.fecha_creacion.strftime('%Y-%m-%d %H:%M') if resultado.fecha_creacion else '-' }}</td>
                             <td>
                                 <a href="{{ url_for('casos_prueba_bp.detalle', caso_id=resultado.caso_prueba.id) }}" class="btn btn-sm btn-outline-primary">Ver Caso</a>
+                                {% if resultado.modo_ejecucion and resultado.modo_ejecucion.value == 'automatizado' %}
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-secondary btn-ver-resultado {% if resultado.estado_ejecucion and resultado.estado_ejecucion.value in ['pendiente', 'en_progreso'] %}d-none{% endif %}"
+                                        title="Ver resultado y logs">
+                                    Ver
+                                </button>
+                                {% endif %}
                             </td>
                         </tr>
                     {% endfor %}
@@ -160,6 +177,7 @@
 {% endblock %}
 
 {% block scripts_adicionales %}
+<script src="{{ url_for('static', filename='js/ejecucion-dinamica.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const confirmInput = document.getElementById('confirmDeleteInput');
@@ -187,63 +205,28 @@
             executeJenkinsCycleBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 const cicloId = this.dataset.cicloId;
+                const esSoloManual = this.dataset.esSoloManual === 'True';
+                const tieneManuales = this.dataset.tieneManuales === 'True';
+                const tieneAutomatizados = this.dataset.tieneAutomatizados === 'True';
 
-                if (confirm('¿Ejecutar todos los casos de este ciclo en Jenkins?')) {
-                    executeFullCycle(cicloId, this);
+                if (esSoloManual) {
+                    alert('Este ciclo solo contiene pruebas manuales y no puede ser ejecutado con Jenkins.');
+                    return;
                 }
+
+                if (tieneManuales && tieneAutomatizados) {
+                    if (!confirm('Este ciclo contiene pruebas manuales y automatizadas. Solo se ejecutarán las pruebas automatizadas. ¿Desea continuar?')) {
+                        return;
+                    }
+                } else {
+                    if (!confirm('¿Ejecutar todos los casos automatizados de este ciclo en Jenkins?')) {
+                        return;
+                    }
+                }
+
+                ejecutarCicloDinamico(cicloId, this);
             });
         }
     });
-
-    function executeFullCycle(cicloId, button) {
-        const originalText = button.innerHTML;
-        button.disabled = true;
-        button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Ejecutando...';
-
-        fetch(`/automatizacion/ejecutar/ciclo/jenkins/${cicloId}`, {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => {
-            if (response.status === 202) {
-                return response.json().then(data => {
-                    showNotification(`${data.cantidad} casos enviados a Jenkins`, 'success');
-                    button.innerHTML = 'En ejecución...';
-                    setTimeout(() => location.reload(), 2000);
-                    return data;
-                });
-            } else {
-                return response.json().then(data => {
-                    throw new Error(data.error || 'Error en la solicitud');
-                });
-            }
-        })
-        .catch(error => {
-            button.innerHTML = originalText;
-            button.disabled = false;
-            showNotification(error.message, 'danger');
-        });
-    }
-
-    function showNotification(message, type) {
-        const alertClass = `alert-${type}`;
-        const alert = document.createElement('div');
-        alert.className = `alert ${alertClass} alert-dismissible fade show`;
-        alert.setAttribute('role', 'alert');
-        alert.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-
-        const container = document.querySelector('.row') || document.body;
-        container.insertBefore(alert, container.firstChild);
-
-        setTimeout(() => {
-            alert.remove();
-        }, 5000);
-    }
 </script>
 {% endblock %}

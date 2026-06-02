@@ -54,6 +54,7 @@ def crear_app(config_name=None):
     from app.rutas.usuarios import usuarios_bp
     from app.rutas.ejecucion import ejecucion_bp
     from app.rutas.automatizacion import automatizacion_bp
+    from app.rutas.tareas import tareas_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(proyectos_bp)
@@ -66,6 +67,7 @@ def crear_app(config_name=None):
     app.register_blueprint(usuarios_bp)
     app.register_blueprint(ejecucion_bp)
     app.register_blueprint(automatizacion_bp)
+    app.register_blueprint(tareas_bp)
 
     @app.route('/')
     def inicio():

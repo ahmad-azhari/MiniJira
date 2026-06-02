@@ -31,6 +31,9 @@ pipeline {
                     if (!fileExists(rutaEjecutor)) {
                         error "ejecutor.py NO encontrado en ${rutaEjecutor}"
                     }
+                    sh "mkdir -p ${RUTA_BASE}/resultados"
+                    sh "find ${RUTA_BASE}/features -maxdepth 1 -name 'test_*.feature' -delete 2>/dev/null || true"
+                    sh "find ${RUTA_BASE} -maxdepth 1 -name 'salida_*.txt' -delete 2>/dev/null || true"
                     echo "ejecutor.py OK"
                 }
             }
@@ -81,10 +84,13 @@ pipeline {
                         def cmd = "${RUTA_PYTHON} ${RUTA_BASE}/ejecutor.py ${rutaFeature} ${idTest}"
                         echo "Ejecutando: ${cmd}"
 
-                        def rutaSalida = "${RUTA_BASE}/salida_${idTest}.txt"
+                        def fecha = new java.text.SimpleDateFormat("yyyy-MM-dd_HHmmss").format(new Date())
+                        def idEjecucion = params.REQUEST_ID?.trim() ?: env.BUILD_NUMBER
+                        def rutaSalida = "${RUTA_BASE}/resultados/${fecha}_${idEjecucion}_caso_${idTest}.txt"
+                        echo "Guardando salida en: ${rutaSalida}"
                         sh(
                             label: "Ejecutar Test ${idTest}",
-                            script: "${cmd} > ${rutaSalida} 2>&1"
+                            script: "URL_BACKEND=${URL_BACKEND} ${cmd} > ${rutaSalida} 2>&1"
                         )
 
                         def salida = readFile(rutaSalida).trim()
@@ -112,7 +118,7 @@ pipeline {
                                 jsonObj['ciclo_prueba_id'] = params.TEST_CYCLE_ID
                             }
                             if (params.REQUEST_ID?.trim()) {
-                                jsonObj['id_solicitud'] = params.REQUEST_ID
+                                jsonObj['id_solicitud'] = "${params.REQUEST_ID}:${idTest}"
                             }
 
                             jsonObj['jenkins_build_number'] = env.BUILD_NUMBER

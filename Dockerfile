@@ -10,7 +10,8 @@ RUN apt-get update && apt-get install -y \
     python3-venv \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install --break-system-packages behave
+COPY test_runner/requirements.txt /tmp/test_runner-requirements.txt
+RUN pip3 install --break-system-packages -r /tmp/test_runner-requirements.txt
 
 
 COPY certificado.cer /tmp/certificado.cer
