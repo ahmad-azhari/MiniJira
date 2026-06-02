@@ -25,7 +25,7 @@
         <a href="{{ url_for('casos_prueba_bp.editar', caso_id=caso.id) }}" class="btn btn-warning btn-sm"> Editar</a>
         {% if caso.tipo.value == 'automatizado' and caso.tiene_script_valido() %}
         <button type="button" class="btn btn-success btn-sm" id="executeAutoBtn">
-            <i class="bi bi-play-fill"></i> Jenkins
+            <i class="bi bi-play-fill"></i> Ejecutar
         </button>
         {% endif %}
         {% endif %}

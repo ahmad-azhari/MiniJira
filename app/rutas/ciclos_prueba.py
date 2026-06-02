@@ -24,6 +24,7 @@ def detalle(ciclo_id):
     casos_disponibles = CasoPrueba.query.filter(
         ~CasoPrueba.ciclos_prueba.any(CicloPrueba.id == ciclo_id)
     ).all()
+    
     ciclo_tiene_resumen_auto = any(
         r.modo_ejecucion
         and r.modo_ejecucion.value == 'automatizado'
@@ -31,6 +32,7 @@ def detalle(ciclo_id):
         and r.estado_ejecucion.value == 'completado'
         for r in ciclo.resultados
     )
+    
     return render_template(
         'ciclos_prueba/detalle.html',
         ciclo=ciclo,
