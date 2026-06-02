@@ -104,8 +104,14 @@ def ejecutar_ciclo_jenkins(ciclo_id):
         resultado_jenkins = jenkins.lanzar_ciclo(ciclo_id=ciclo_id)
 
         if resultado_jenkins['exito']:
-            resultados_mapeados = []
             id_solicitud_ciclo = resultado_jenkins.get('id_solicitud')
+            ejecucion_ciclo = AutomatizacionService.crear_ejecucion_ciclo(
+                ciclo_id=ciclo_id,
+                build_number=resultado_jenkins.get('build_number'),
+                id_solicitud=id_solicitud_ciclo
+            )
+            
+            resultados_mapeados = []
             casos_a_ejecutar = [c for c in ciclo.casos_prueba if c.tiene_script_valido()]
             for caso in casos_a_ejecutar:
                 resultado = AutomatizacionService.crear_resultado_automatizado(
@@ -125,6 +131,7 @@ def ejecutar_ciclo_jenkins(ciclo_id):
                     'cantidad': resultado_jenkins['cantidad'],
                     'jenkins_build_number': resultado_jenkins.get('build_number'),
                     'id_solicitud': resultado_jenkins.get('id_solicitud'),
+                    'ejecucion_ciclo_id': ejecucion_ciclo.id,
                     'resultados': resultados_mapeados,
                     'mensaje': f"Se enviaron {resultado_jenkins['cantidad']} tests a Jenkins correctamente"
                 }), 202
@@ -289,7 +296,18 @@ def callback_jenkins(caso_id):
 
         db.session.commit()
 
-        return {'estado': 'OK', 'resultado_id': resultado.id}, 200
+        if resultado.ciclo_prueba_id:
+            from app.modelos import EjecucionCiclo
+            ejecucion_ciclo = EjecucionCiclo.query.filter_by(
+                ciclo_prueba_id=resultado.ciclo_prueba_id
+            ).order_by(EjecucionCiclo.fecha_ejecucion.desc()).first()
+            if ejecucion_ciclo:
+                try:
+                    AutomatizacionService.actualizar_ejecucion_ciclo(ejecucion_ciclo.id)
+                except Exception as e:
+                    current_app.logger.error(f"Error actualizando ejecución de ciclo: {e}")
+
+        return {'status': 'ok'}, 200
 
     except ValueError as e:
         current_app.logger.error(f"Error validación callback: {e}")

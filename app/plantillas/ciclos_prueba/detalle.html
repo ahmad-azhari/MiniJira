@@ -124,7 +124,52 @@
 </div>
 
 <div class="mt-4">
-    <h3>Ejecuciones ({{ resultados|length }})</h3>
+    <h3>Ejecuciones del Ciclo ({{ ejecuciones_ciclo|length }})</h3>
+
+    {% if ejecuciones_ciclo %}
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Fecha de Ejecución</th>
+                        <th>Total Pruebas</th>
+                        <th>Pasadas</th>
+                        <th>Fallidas</th>
+                        <th>En Progreso</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ejecucion in ejecuciones_ciclo %}
+                        <tr>
+                            <td>{{ ejecucion.fecha_ejecucion.strftime('%Y-%m-%d %H:%M') if ejecucion.fecha_ejecucion else '-' }}</td>
+                            <td>{{ ejecucion.total_pruebas }}</td>
+                            <td><span class="badge bg-success">{{ ejecucion.pruebas_pasadas }}</span></td>
+                            <td><span class="badge bg-danger">{{ ejecucion.pruebas_fallidas }}</span></td>
+                            <td><span class="badge bg-warning">{{ ejecucion.pruebas_en_progreso }}</span></td>
+                            <td>
+                                {% if ejecucion.estado_ejecucion.value == 'completado' %}
+                                    <span class="badge bg-success">PASADO</span>
+                                {% elif ejecucion.estado_ejecucion.value == 'error' %}
+                                    <span class="badge bg-danger">FALLIDO</span>
+                                {% elif ejecucion.estado_ejecucion.value == 'en_progreso' %}
+                                    <span class="badge bg-info">{{ ejecucion.estado_ejecucion.value }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ ejecucion.estado_ejecucion.value }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info">No hay ejecuciones de ciclo completadas.</div>
+    {% endif %}
+</div>
+
+<div class="mt-4">
+    <h3>Ejecuciones Individuales ({{ resultados|length }})</h3>
 
     {% if resultados %}
         <div class="table-responsive">

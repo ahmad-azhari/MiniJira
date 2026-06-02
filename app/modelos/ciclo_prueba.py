@@ -33,8 +33,8 @@ class CicloPrueba(db.Model):
     TRANSICIONES_VALIDAS = {
         EstadoEnum.NUEVO: [EstadoEnum.EN_PROGRESO],
         EstadoEnum.EN_PROGRESO: [EstadoEnum.PASADO, EstadoEnum.FALLIDO, EstadoEnum.NUEVO],
-        EstadoEnum.PASADO: [EstadoEnum.EN_PROGRESO],
-        EstadoEnum.FALLIDO: [EstadoEnum.EN_PROGRESO],
+        EstadoEnum.PASADO: [EstadoEnum.EN_PROGRESO, EstadoEnum.FALLIDO],
+        EstadoEnum.FALLIDO: [EstadoEnum.EN_PROGRESO, EstadoEnum.PASADO],
         EstadoEnum.TERMINADO: [EstadoEnum.EN_PROGRESO],
     }
 

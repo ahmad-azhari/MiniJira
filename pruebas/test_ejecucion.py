@@ -106,7 +106,6 @@ def test_ejecucion_preseleccion_ciclo_resultado(client):
 
 def test_estados_lote_endpoint(client):
     """Prueba que el endpoint /automatizacion/estados retorna correctamente los estados."""
-    # Autenticar como miembro
     client.post('/auth/login', data={
         'nombre_usuario': 'miembro',
         'contrasena': 'miembro123'
@@ -136,7 +135,6 @@ def test_estados_lote_endpoint(client):
         db.session.commit()
         res_id = resultado.id
 
-    # Consultar estados lote
     response = client.get(f'/automatizacion/estados?ids={res_id},abc,,99999')
     assert response.status_code == 200
     data = response.get_json()
@@ -172,7 +170,6 @@ def test_callback_jenkins_updates_existing_result(client):
         res_id = resultado.id
         caso_id = caso.id
 
-    # Simular callback de Jenkins
     payload = {
         'id_solicitud': 'id-solicitud-callback-test',
         'estado_prueba': 'PASADO',
@@ -192,4 +189,4 @@ def test_callback_jenkins_updates_existing_result(client):
         assert updated_res.estado == EstadoResultadoEnum.PASADO
         assert updated_res.resultado_obtenido == 'Todo pasó correctamente'
         assert updated_res.tiempo_ejecucion is not None
-        assert updated_res.tiempo_ejecucion >= 290  # ~300 segundos
+        assert updated_res.tiempo_ejecucion >= 290

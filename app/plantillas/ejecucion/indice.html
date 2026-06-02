@@ -139,7 +139,7 @@
                                         data-ver-ciclo-id="{{ ciclo_seleccionado.id }}"
                                         data-ciclo-nombre="{{ ciclo_seleccionado.nombre }}"
                                         style="margin-bottom: 0.5rem;">
-                                    Ver resumen del ciclo
+                                    Pruebas Automatizadas
                                 </button>
                                 {% endif %}
                                 <span class="badge bg-light text-dark p-2 fs-6">
@@ -216,7 +216,7 @@
                                                             <a href="{{ url_for('resultados_bp.crear', caso_id=item.caso.id, ciclo_id=ciclo_seleccionado.id) }}"
                                                                class="btn btn-outline-primary"
                                                                style="font-size: 0.85rem;">
-                                                               Ejecutar
+                                                               Manual
                                                             </a>
                                                             {% if item.caso.tipo.value == 'automatizado' and item.caso.tiene_script_valido() %}
                                                                 <button type="button"
@@ -228,12 +228,23 @@
                                                                 </button>
                                                             {% endif %}
                                                             {% if item.ultimo_resultado %}
-                                                                <button type="button"
-                                                                        class="btn btn-outline-secondary btn-ver-resultado {% if item.ejecucion_activa %}d-none{% endif %}"
-                                                                        style="font-size: 0.85rem;"
-                                                                        title="Ver resultado y logs">
-                                                                    Ver
-                                                                </button>
+                                                                {% if item.caso.tipo.value == 'manual' %}
+                                                                    <button type="button"
+                                                                            class="btn btn-outline-secondary btn-ver-prueba-manual {% if item.ejecucion_activa %}d-none{% endif %}"
+                                                                            data-caso-id="{{ item.caso.id }}"
+                                                                            data-resultado-id="{{ item.ultimo_resultado.id }}"
+                                                                            style="font-size: 0.85rem;"
+                                                                            title="Ver detalles de prueba manual">
+                                                                        Ver
+                                                                    </button>
+                                                                {% else %}
+                                                                    <button type="button"
+                                                                            class="btn btn-outline-secondary btn-ver-resultado {% if item.ejecucion_activa %}d-none{% endif %}"
+                                                                            style="font-size: 0.85rem;"
+                                                                            title="Ver resultado y logs">
+                                                                        Ver
+                                                                    </button>
+                                                                {% endif %}
                                                             {% endif %}
                                                         </div>
                                                     {% else %}

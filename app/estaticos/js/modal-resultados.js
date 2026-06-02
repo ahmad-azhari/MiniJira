@@ -15,6 +15,23 @@ function abrirModalResultado(resultadoId, opciones = {}) {
     const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
     prepararModalCargando(opciones.casoNombre);
 
+    const modalCicloEl = document.getElementById('modalResultadoCiclo');
+    if (modalCicloEl && modalCicloEl.classList.contains('show')) {
+        modalEl.style.zIndex = '1060';
+        const backdrop = document.querySelector('.modal-backdrop:not(.modal-backdrop-static)');
+        if (backdrop) {
+            backdrop.style.zIndex = '1055';
+        }
+    }
+
+    modalEl.addEventListener('hidden.bs.modal', function() {
+        modalEl.style.zIndex = '';
+        const backdrop = document.querySelector('.modal-backdrop:not(.modal-backdrop-static)');
+        if (backdrop) {
+            backdrop.style.zIndex = '';
+        }
+    }, { once: true });
+
     Promise.all([
         fetch(`/automatizacion/estado/${resultadoId}`).then(r => {
             if (!r.ok) throw new Error('Error al obtener estado');

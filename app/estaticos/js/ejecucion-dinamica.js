@@ -207,10 +207,14 @@ function actualizarFilaResultado(resultadoId, casoId, datos) {
     }
 
     const resultadoIdExistente = fila.getAttribute('data-resultado-id');
-    if (!resultadoIdExistente || resultadoIdExistente === resultadoId) {
+    const estadoEjecucion = (datos.estado_ejecucion || '').toLowerCase();
+    
+    if (estadoEjecucion === 'pendiente' || estadoEjecucion === 'en_progreso') {
         fila.setAttribute('data-resultado-id', resultadoId);
-    } else {
+    } else if (resultadoIdExistente && resultadoIdExistente !== String(resultadoId)) {
         return;
+    } else {
+        fila.setAttribute('data-resultado-id', resultadoId);
     }
 
     const contenedorEstado = fila.querySelector('.estado-resultado-container');
@@ -224,7 +228,6 @@ function actualizarFilaResultado(resultadoId, casoId, datos) {
     };
 
     const estadoResultado = (datos.estado_resultado || '').toLowerCase();
-    const estadoEjecucion = (datos.estado_ejecucion || '').toLowerCase();
     const colorEstado = estadoColores[estadoResultado] || 'secondary';
     const textoEstado = (datos.estado_resultado || 'N/A').toUpperCase();
 

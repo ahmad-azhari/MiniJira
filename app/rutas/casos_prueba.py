@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
 from app.base_datos import db
 from app.modelos import CasoPrueba, Epica, Usuario
 from config.constantes import TipoTestEnum, EstadoEnum, PrioridadEnum
@@ -102,3 +102,34 @@ def eliminar(caso_id):
 
     flash(f'Caso de prueba "{nombre}" eliminado exitosamente.', 'success')
     return redirect(url_for('casos_prueba_bp.indice'))
+
+
+@casos_prueba_bp.route('/<int:caso_id>/api/detalles')
+@requerir_autenticacion
+def obtener_detalles_api(caso_id):
+    caso = CasoPrueba.query.get_or_404(caso_id)
+    
+    resultado_obtenido = None
+    notas = None
+    if caso.resultados:
+        resultado_mas_reciente = max(caso.resultados, key=lambda r: r.fecha_creacion)
+        resultado_obtenido = resultado_mas_reciente.resultado_obtenido
+        notas = resultado_mas_reciente.notas
+    
+    historias = [epica.nombre for epica in caso.epicas] if caso.epicas else []
+    
+    return jsonify({
+        'id': caso.id,
+        'nombre': caso.nombre,
+        'objetivo': caso.objetivo or '',
+        'precondicion': caso.precondicion or '',
+        'pasos_reproduccion': caso.pasos_reproduccion or '',
+        'resultado_esperado': caso.resultado_esperado or '',
+        'estado': caso.estado.value if caso.estado else '',
+        'prioridad': caso.prioridad.value if caso.prioridad else '',
+        'tipo': caso.tipo.value if caso.tipo else '',
+        'fecha_creacion': caso.fecha_creacion.isoformat() if caso.fecha_creacion else None,
+        'historias': historias,
+        'resultado_obtenido': resultado_obtenido or '',
+        'notas': notas or '',
+    }), 200

@@ -7,6 +7,7 @@ from app.modelos.resultado import Resultado
 from app.modelos.defecto import Defecto
 from app.modelos.historial import Historial
 from app.modelos.tarea import Tarea
+from app.modelos.ejecucion_ciclo import EjecucionCiclo
 
 __all__ = [
     'Usuario',
@@ -19,4 +20,5 @@ __all__ = [
     'Defecto',
     'Historial',
     'Tarea',
+    'EjecucionCiclo',
 ]

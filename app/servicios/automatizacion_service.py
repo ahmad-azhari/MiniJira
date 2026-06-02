@@ -1,4 +1,4 @@
-from app.modelos import CasoPrueba, CicloPrueba, Resultado
+from app.modelos import CasoPrueba, CicloPrueba, Resultado, EjecucionCiclo
 from app.base_datos import db
 from config.constantes import EstadoResultadoEnum, ModoEjecucionEnum, EstadoEjecucionEnum
 from flask import current_app
@@ -191,16 +191,35 @@ class AutomatizacionService:
     @staticmethod
     def obtener_resumen_ejecucion_ciclo(ciclo_id: int, solicitud_id: str = None) -> dict:
         ciclo = AutomatizacionService.validar_ciclo_prueba(ciclo_id)
-        consulta = Resultado.query.filter_by(
-            ciclo_prueba_id=ciclo_id,
-            modo_ejecucion=ModoEjecucionEnum.AUTOMATIZADO,
-        )
-
+        
+        resultados_por_caso = {}
+        for resultado in ciclo.resultados:
+            caso_id = resultado.caso_prueba_id
+            if caso_id not in resultados_por_caso or resultado.fecha_creacion > resultados_por_caso[caso_id].fecha_creacion:
+                resultados_por_caso[caso_id] = resultado
+        
+        casos_con_resultado_auto = {}
+        for caso_id, resultado in resultados_por_caso.items():
+            if resultado.modo_ejecucion == ModoEjecucionEnum.AUTOMATIZADO:
+                casos_con_resultado_auto[caso_id] = resultado
+        
+        if not casos_con_resultado_auto:
+            return {
+                'ciclo_id': ciclo_id,
+                'ciclo_nombre': ciclo.nombre,
+                'casos': [],
+                'resumen': {'pasados': 0, 'fallidos': 0, 'total': 0},
+                'log_completo': '',
+            }
+        
         if solicitud_id:
-            consulta = consulta.filter(Resultado.id_solicitud.like(f"{solicitud_id}:%"))
+            casos_con_resultado_auto = {
+                caso_id: resultado for caso_id, resultado in casos_con_resultado_auto.items()
+                if resultado.id_solicitud and resultado.id_solicitud.startswith(f"{solicitud_id}:")
+            }
         else:
-            ultimo = consulta.order_by(Resultado.fecha_creacion.desc()).first()
-            if not ultimo or not ultimo.id_solicitud or ':' not in ultimo.id_solicitud:
+            ultimo = max(casos_con_resultado_auto.values(), key=lambda r: r.fecha_creacion)
+            if not ultimo.id_solicitud or ':' not in ultimo.id_solicitud:
                 return {
                     'ciclo_id': ciclo_id,
                     'ciclo_nombre': ciclo.nombre,
@@ -209,9 +228,12 @@ class AutomatizacionService:
                     'log_completo': '',
                 }
             base_solicitud = ultimo.id_solicitud.split(':', 1)[0]
-            consulta = consulta.filter(Resultado.id_solicitud.like(f"{base_solicitud}:%"))
-
-        resultados = consulta.order_by(Resultado.caso_prueba_id.asc()).all()
+            casos_con_resultado_auto = {
+                caso_id: resultado for caso_id, resultado in casos_con_resultado_auto.items()
+                if resultado.id_solicitud and resultado.id_solicitud.startswith(f"{base_solicitud}:")
+            }
+        
+        resultados = sorted(casos_con_resultado_auto.values(), key=lambda r: r.caso_prueba_id)
         casos = []
         pasados = 0
         fallidos = 0
@@ -256,6 +278,18 @@ class AutomatizacionService:
         if log_jenkins:
             log_completo = f"--- Consola Jenkins (build #{build_number or '?'}) ---\n{log_jenkins}\n\n--- Detalle por caso ---\n\n{log_completo}"
 
+        duracion_total = 0
+        fecha_ejecucion = None
+        if resultados:
+            fechas_inicio = [r.tiempo_inicio_jenkins for r in resultados if r.tiempo_inicio_jenkins]
+            fechas_fin = [r.tiempo_fin_jenkins for r in resultados if r.tiempo_fin_jenkins]
+            if fechas_inicio and fechas_fin:
+                fecha_ejecucion = min(fechas_inicio)
+                fecha_fin = max(fechas_fin)
+                duracion_total = (fecha_fin - fecha_ejecucion).total_seconds()
+            elif resultados[0].fecha_creacion:
+                fecha_ejecucion = resultados[0].fecha_creacion
+
         return {
             'ciclo_id': ciclo_id,
             'ciclo_nombre': ciclo.nombre,
@@ -269,6 +303,13 @@ class AutomatizacionService:
                 'total': len(casos),
             },
             'log_completo': log_completo,
+            'detalles': {
+                'build_number': build_number,
+                'fecha_ejecucion': fecha_ejecucion.isoformat() if fecha_ejecucion else None,
+                'duracion_total': duracion_total if duracion_total > 0 else None,
+                'estado_ejecucion': 'completado' if resultados and all(r.estado_ejecucion == EstadoEjecucionEnum.COMPLETADO for r in resultados if r.estado_ejecucion) else 'en_progreso',
+                'jenkins_url': log_url,
+            },
         }
 
     @staticmethod
@@ -367,3 +408,69 @@ class AutomatizacionService:
         )
 
         return resultado
+
+    @staticmethod
+    def crear_ejecucion_ciclo(ciclo_id: int, build_number: int = None, id_solicitud: str = None) -> EjecucionCiclo:
+        ciclo = AutomatizacionService.validar_ciclo_prueba(ciclo_id)
+        
+        ejecucion = EjecucionCiclo(
+            ciclo_prueba_id=ciclo_id,
+            fecha_ejecucion=datetime.utcnow(),
+            total_pruebas=len(ciclo.casos_prueba),
+            pruebas_pasadas=0,
+            pruebas_fallidas=0,
+            pruebas_en_progreso=0,
+            estado_ejecucion=EstadoEjecucionEnum.EN_PROGRESO,
+            jenkins_build_number=build_number,
+            id_solicitud=id_solicitud,
+        )
+        
+        db.session.add(ejecucion)
+        db.session.commit()
+        
+        current_app.logger.info(
+            f"Ejecución de ciclo creada: ciclo={ciclo_id}, build={build_number}, id_solicitud={id_solicitud}"
+        )
+        
+        return ejecucion
+
+    @staticmethod
+    def actualizar_ejecucion_ciclo(ejecucion_id: int) -> EjecucionCiclo:
+        ejecucion = EjecucionCiclo.query.get(ejecucion_id)
+        if not ejecucion:
+            raise ValueError(f"Ejecución de ciclo {ejecucion_id} no existe")
+        
+        ciclo = ejecucion.ciclo_prueba
+        
+        resultados_por_caso = {}
+        for resultado in ciclo.resultados:
+            caso_id = resultado.caso_prueba_id
+            if caso_id not in resultados_por_caso or resultado.fecha_creacion > resultados_por_caso[caso_id].fecha_creacion:
+                resultados_por_caso[caso_id] = resultado
+        
+        pasadas = 0
+        fallidas = 0
+        en_progreso = 0
+        
+        for resultado in resultados_por_caso.values():
+            if resultado.estado == EstadoResultadoEnum.PASADO:
+                pasadas += 1
+            elif resultado.estado == EstadoResultadoEnum.FALLIDO:
+                fallidas += 1
+            elif resultado.estado == EstadoResultadoEnum.EN_PROGRESO:
+                en_progreso += 1
+        
+        ejecucion.pruebas_pasadas = pasadas
+        ejecucion.pruebas_fallidas = fallidas
+        ejecucion.pruebas_en_progreso = en_progreso
+        
+        if en_progreso > 0:
+            ejecucion.estado_ejecucion = EstadoEjecucionEnum.EN_PROGRESO
+        elif fallidas > 0:
+            ejecucion.estado_ejecucion = EstadoEjecucionEnum.ERROR
+        else:
+            ejecucion.estado_ejecucion = EstadoEjecucionEnum.COMPLETADO
+        
+        db.session.commit()
+        
+        return ejecucion

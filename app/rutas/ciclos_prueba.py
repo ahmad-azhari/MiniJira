@@ -1,8 +1,9 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from app.base_datos import db
-from app.modelos import CicloPrueba, CasoPrueba
+from app.modelos import CicloPrueba, CasoPrueba, EjecucionCiclo
 from config.constantes import EstadoEnum
 from app.decoradores import requerir_autenticacion, requerir_miembro, requerir_admin
+from app.servicios.automatizacion_service import AutomatizacionService
 
 ciclos_prueba_bp = Blueprint('ciclos_prueba_bp', __name__, url_prefix='/ciclos-prueba')
 
@@ -33,12 +34,23 @@ def detalle(ciclo_id):
         for r in ciclo.resultados
     )
     
+    ejecuciones_ciclo = EjecucionCiclo.query.filter_by(
+        ciclo_prueba_id=ciclo_id
+    ).order_by(EjecucionCiclo.fecha_ejecucion.desc()).all()
+    
+    for ejecucion in ejecuciones_ciclo:
+        try:
+            AutomatizacionService.actualizar_ejecucion_ciclo(ejecucion.id)
+        except Exception as e:
+            current_app.logger.error(f"Error actualizando ejecución de ciclo {ejecucion.id}: {e}")
+    
     return render_template(
         'ciclos_prueba/detalle.html',
         ciclo=ciclo,
         casos_disponibles=casos_disponibles,
         resultados=ciclo.resultados,
         ciclo_tiene_resumen_auto=ciclo_tiene_resumen_auto,
+        ejecuciones_ciclo=ejecuciones_ciclo,
     )
 
 

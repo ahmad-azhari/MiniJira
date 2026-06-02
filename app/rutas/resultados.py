@@ -1,8 +1,9 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from app.base_datos import db
-from app.modelos import Resultado, CasoPrueba, CicloPrueba
+from app.modelos import Resultado, CasoPrueba, CicloPrueba, EjecucionCiclo
 from config.constantes import EstadoResultadoEnum
 from app.decoradores import requerir_autenticacion, requerir_miembro, requerir_admin
+from app.servicios.automatizacion_service import AutomatizacionService
 
 resultados_bp = Blueprint('resultados_bp', __name__, url_prefix='/resultados')
 
@@ -50,6 +51,20 @@ def crear(caso_id):
         db.session.add(resultado)
         db.session.commit()
 
+        ciclo = CicloPrueba.query.get(ciclo_id)
+        if ciclo:
+            ciclo.actualizar_estado_desde_resultados()
+            db.session.commit()
+
+        ejecucion_ciclo = EjecucionCiclo.query.filter_by(
+            ciclo_prueba_id=ciclo_id
+        ).order_by(EjecucionCiclo.fecha_ejecucion.desc()).first()
+        if ejecucion_ciclo:
+            try:
+                AutomatizacionService.actualizar_ejecucion_ciclo(ejecucion_ciclo.id)
+            except Exception as e:
+                current_app.logger.error(f"Error actualizando ejecución de ciclo: {e}")
+
         flash('Resultado de prueba registrado exitosamente.', 'success')
         return redirect(url_for('resultados_bp.detalle', resultado_id=resultado.id))
 
@@ -67,6 +82,20 @@ def editar(resultado_id):
         resultado.estado = EstadoResultadoEnum(request.form.get('estado', resultado.estado.value))
         resultado.notas = request.form.get('notas', resultado.notas).strip()
         db.session.commit()
+
+        if resultado.ciclo_prueba:
+            resultado.ciclo_prueba.actualizar_estado_desde_resultados()
+            db.session.commit()
+
+        if resultado.ciclo_prueba_id:
+            ejecucion_ciclo = EjecucionCiclo.query.filter_by(
+                ciclo_prueba_id=resultado.ciclo_prueba_id
+            ).order_by(EjecucionCiclo.fecha_ejecucion.desc()).first()
+            if ejecucion_ciclo:
+                try:
+                    AutomatizacionService.actualizar_ejecucion_ciclo(ejecucion_ciclo.id)
+                except Exception as e:
+                    current_app.logger.error(f"Error actualizando ejecución de ciclo: {e}")
 
         flash('Resultado actualizado exitosamente.', 'success')
         return redirect(url_for('resultados_bp.detalle', resultado_id=resultado_id))
