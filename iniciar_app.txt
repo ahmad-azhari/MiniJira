@@ -1,0 +1,143 @@
+# ============================================================================
+# INSTRUCCIONES PARA INICIAR MINIJIRA CON DOCKER
+# ============================================================================
+
+# PASO 1: Configurar variables de entorno
+# ------------------------------------------
+# Crear archivo .env en la raíz del proyecto con las siguientes variables:
+
+# Variables de Flask
+FLASK_APP=run.py
+FLASK_ENV=development
+FLASK_DEBUG=False
+SECRET_KEY=tu_clave_secreta_aqui
+
+# Variables de Base de Datos
+DATABASE_URL=sqlite:///mini_jira.db
+
+# Variables de Jenkins
+JENKINS_URL=http://jenkins:8080
+JENKINS_JOB=mini-jira
+JENKINS_USUARIO=admin
+JENKINS_TOKEN_API=tu_token_api_aqui
+JENKINS_TOKEN_CONSTRUCCION=tu_token_construccion_aqui
+JENKINS_TIEMPO_ESPERA=30
+JENKINS_RUTA_PYTHON=/usr/bin/python3
+JENKINS_PASSWORD=tu_password_jenkins_aqui
+
+# Variables de Proxy (opcional)
+# HTTP_PROXY=http://proxy:puerto
+# HTTPS_PROXY=http://proxy:puerto
+# NO_PROXY=localhost,127.0.0.1
+
+# PASO 2: Verificar requisitos previos
+# ------------------------------------
+# Asegurarse de tener instalado:
+# - Docker Desktop (Windows)
+# - Docker Compose
+
+# Verificar instalación:
+docker --version
+docker-compose --version
+
+# PASO 3: Construir y levantar contenedores
+# -----------------------------------------
+# Construir las imágenes y levantar los servicios:
+docker-compose up -d --build
+
+# Verificar estado de los contenedores:
+docker-compose ps
+
+# Ver logs de los servicios:
+docker-compose logs -f app
+docker-compose logs -f jenkins
+
+# PASO 4: Inicializar la base de datos
+# -------------------------------------
+# Ejecutar el script de inicialización dentro del contenedor:
+docker-compose exec app python scripts/inicializar_bd.py
+
+# O alternativamente, acceder al contenedor y ejecutar:
+docker-compose exec app bash
+python scripts/inicializar_bd.py
+exit
+
+# PASO 5: Acceder a la aplicación
+# ---------------------------------
+# Aplicación MiniJira:
+# URL: http://localhost:5000
+# Usuario por defecto: admin
+# Contraseña por defecto: admin123
+
+# Jenkins:
+# URL: http://localhost:8080
+# Usuario: admin
+# Contraseña: (configurada en JENKINS_PASSWORD)
+
+# PASO 6: Verificar funcionamiento
+# --------------------------------
+# Verificar que los servicios estén healthy:
+docker-compose ps
+
+# Verificar logs de errores:
+docker-compose logs app | grep -i error
+docker-compose logs jenkins | grep -i error
+
+# PASO 7: Comandos útiles
+# ------------------------
+# Detener contenedores:
+docker-compose down
+
+# Detener y eliminar volúmenes:
+docker-compose down -v
+
+# Reiniciar un servicio específico:
+docker-compose restart app
+docker-compose restart jenkins
+
+# Reconstruir solo un servicio:
+docker-compose up -d --build app
+
+# Acceder al contenedor de la app:
+docker-compose exec app bash
+
+# Acceder al contenedor de Jenkins:
+docker-compose exec jenkins bash
+
+# Ver logs en tiempo real:
+docker-compose logs -f
+
+# PASO 8: Configuración inicial de Jenkins (primera vez)
+# -------------------------------------------------------
+# 1. Acceder a http://localhost:8080
+# 2. Desbloquear Jenkins con la contraseña inicial:
+#    docker-compose exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
+# 3. Instalar plugins sugeridos
+# 4. Crear usuario admin (usar las credenciales del .env)
+# 5. Configurar el job "mini-jira" si no se crea automáticamente
+
+# PASO 9: Verificar integración de automatización
+# -----------------------------------------------
+# 1. Iniciar sesión en MiniJira (http://localhost:5000)
+# 2. Crear un caso de prueba con script Gherkin
+# 3. Ejecutar el caso con Jenkins
+# 4. Verificar que el resultado se actualiza correctamente
+
+# PASO 10: Solución de problemas comunes
+# ---------------------------------------
+# Error de conexión a Jenkins:
+# - Verificar que Jenkins esté healthy: docker-compose ps
+# - Verificar logs de Jenkins: docker-compose logs jenkins
+# - Verificar variables de entorno en docker-compose.yml
+
+# Error de base de datos:
+# - Eliminar el volumen y recrear: docker-compose down -v && docker-compose up -d --build
+# - Volver a ejecutar: docker-compose exec app python scripts/inicializar_bd.py
+
+# Error de SSL/Certificado:
+# - Asegurarse de que certificado.cer exista en la raíz del proyecto
+# - Verificar que se monte correctamente en el contenedor
+
+# Error de permisos:
+# - Verificar que el usuario tenga permisos para Docker
+# - Ejecutar Docker Desktop como administrador si es necesario
