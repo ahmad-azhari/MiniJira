@@ -12,10 +12,6 @@ def step_sistema_operativo(context):
 def step_ingresa_credenciales(context):
     pass
 
-@when("hace clic en el botón Login")
-def step_clic_login(context):
-    pass
-
 @when("se ejecuta una prueba simple")
 def step_ejecuta_prueba_simple(context):
     pass
