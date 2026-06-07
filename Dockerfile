@@ -8,6 +8,8 @@ RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     python3-venv \
+    chromium \
+    chromium-driver \
     && rm -rf /var/lib/apt/lists/*
 
 COPY test_runner/requirements.txt /tmp/test_runner-requirements.txt

@@ -13,7 +13,6 @@
                 <select class="form-select" id="estado" name="estado" required>
                     <option value="pasado" {% if resultado.estado.value == 'pasado' %}selected{% endif %}>Pasado</option>
                     <option value="fallido" {% if resultado.estado.value == 'fallido' %}selected{% endif %}>Fallido</option>
-                    <option value="bloqueado" {% if resultado.estado.value == 'bloqueado' %}selected{% endif %}>Bloqueado</option>
                     <option value="en_progreso" {% if resultado.estado.value == 'en_progreso' %}selected{% endif %}>En Progreso</option>
                 </select>
             </div>

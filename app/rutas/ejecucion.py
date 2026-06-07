@@ -23,6 +23,63 @@ def _es_ejecucion_activa(resultado):
 @requerir_autenticacion
 def indice():
     ciclos = CicloPrueba.query.all()
+    casos = CasoPrueba.query.all()
+    
+    stats_ciclos = []
+    for c in ciclos:
+        c.actualizar_estado_desde_resultados()
+        total = len(c.casos_prueba)
+        resultados_map = {}
+        for res in c.resultados:
+            if res.caso_prueba_id not in resultados_map or res.fecha_creacion > resultados_map[res.caso_prueba_id].fecha_creacion:
+                resultados_map[res.caso_prueba_id] = res
+        
+        pasados = sum(1 for res in resultados_map.values() if res.estado == EstadoResultadoEnum.PASADO)
+        fallidos = sum(1 for res in resultados_map.values() if res.estado == EstadoResultadoEnum.FALLIDO)
+        en_progreso = sum(1 for res in resultados_map.values() if res.estado == EstadoResultadoEnum.EN_PROGRESO or _es_ejecucion_activa(res))
+        pendientes = total - len(resultados_map)
+        
+        stats_ciclos.append({
+            'nombre': c.nombre,
+            'total': total,
+            'pasados': pasados,
+            'fallidos': fallidos,
+            'en_progreso': en_progreso,
+            'pendientes': max(0, pendientes)
+        })
+
+    pasados_ind = 0
+    fallidos_ind = 0
+    en_progreso_ind = 0
+    pendientes_ind = 0
+    
+    for caso in casos:
+        ultimo_resultado = Resultado.query.filter_by(caso_prueba_id=caso.id).order_by(Resultado.fecha_creacion.desc()).first()
+        if not ultimo_resultado:
+            pendientes_ind += 1
+        elif ultimo_resultado.estado == EstadoResultadoEnum.PASADO:
+            pasados_ind += 1
+        elif ultimo_resultado.estado == EstadoResultadoEnum.FALLIDO:
+            fallidos_ind += 1
+        else:
+            en_progreso_ind += 1
+
+    stats_casos = {
+        'total': len(casos),
+        'pasados': pasados_ind,
+        'fallidos': fallidos_ind,
+        'en_progreso': en_progreso_ind,
+        'pendientes': pendientes_ind
+    }
+    
+    return render_template('ejecucion/indice.html', 
+                           stats_ciclos=stats_ciclos,
+                           stats_casos=stats_casos)
+
+@ejecucion_bp.route('/ciclos')
+@requerir_autenticacion
+def ciclos():
+    ciclos = CicloPrueba.query.all()
     ciclo_id = request.args.get('ciclo_id', type=int)
     
     ciclo_seleccionado = None
@@ -99,11 +156,64 @@ def indice():
     
     db.session.commit()
         
-    return render_template(
-        'ejecucion/indice.html',
-        ciclos=ciclos,
-        ciclo_seleccionado=ciclo_seleccionado,
-        casos_con_estado=casos_con_estado,
-        stats_ciclos=stats_ciclos,
-        ciclo_tiene_resumen_auto=ciclo_tiene_resumen_auto,
-    )
+    return render_template('ejecucion/ciclos.html', 
+                           ciclos=ciclos, 
+                           ciclo_seleccionado=ciclo_seleccionado,
+                           casos_con_estado=casos_con_estado,
+                           stats_ciclos=stats_ciclos,
+                           ciclo_tiene_resumen_auto=ciclo_tiene_resumen_auto)
+
+@ejecucion_bp.route('/casos')
+@requerir_autenticacion
+def casos():
+    casos_db = CasoPrueba.query.all()
+    
+    casos_automaticos = []
+    casos_manuales = []
+    
+    pasados_ind = 0
+    fallidos_ind = 0
+    en_progreso_ind = 0
+    pendientes_ind = 0
+    
+    for caso in casos_db:
+        ultimo_resultado = Resultado.query.filter_by(
+            caso_prueba_id=caso.id
+        ).order_by(Resultado.fecha_creacion.desc()).first()
+        
+        ejecucion_activa = False
+        if caso.tipo.value == 'automatizado':
+            ejecucion_activa = _es_ejecucion_activa(ultimo_resultado)
+        
+        if not ultimo_resultado:
+            pendientes_ind += 1
+        elif ultimo_resultado.estado == EstadoResultadoEnum.PASADO:
+            pasados_ind += 1
+        elif ultimo_resultado.estado == EstadoResultadoEnum.FALLIDO:
+            fallidos_ind += 1
+        else:
+            en_progreso_ind += 1
+            
+        info = {
+            'caso': caso,
+            'ultimo_resultado': ultimo_resultado,
+            'ejecucion_activa': ejecucion_activa
+        }
+        
+        if caso.tipo.value == 'automatizado':
+            casos_automaticos.append(info)
+        else:
+            casos_manuales.append(info)
+            
+    stats_casos = {
+        'total': len(casos_db),
+        'pasados': pasados_ind,
+        'fallidos': fallidos_ind,
+        'en_progreso': en_progreso_ind,
+        'pendientes': pendientes_ind
+    }
+            
+    return render_template('ejecucion/casos.html',
+                           casos_automaticos=casos_automaticos,
+                           casos_manuales=casos_manuales,
+                           stats_casos=stats_casos)

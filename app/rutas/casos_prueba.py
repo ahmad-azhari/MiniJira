@@ -22,7 +22,8 @@ def indice():
 @requerir_autenticacion
 def detalle(caso_id):
     caso = CasoPrueba.query.get_or_404(caso_id)
-    return render_template('casos_prueba/detalle.html', caso=caso)
+    ciclos_del_caso = caso.ciclos_prueba if caso.ciclos_prueba else []
+    return render_template('casos_prueba/detalle.html', caso=caso, ciclos_del_caso=ciclos_del_caso)
 
 
 @casos_prueba_bp.route('/nuevo', methods=['GET', 'POST'])

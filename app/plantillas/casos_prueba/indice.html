@@ -11,6 +11,7 @@
         {% if 'miembro' in session.get('roles', []) %}
         <a href="{{ url_for('casos_prueba_bp.crear') }}" class="btn btn-primary">+ Nuevo Caso</a>
         {% endif %}
+    </div>
 </div>
 
 <form method="GET" class="d-flex mb-3">
@@ -23,39 +24,48 @@
 
 {% if casos %}
     <div class="table-responsive">
-        <table class="table table-striped table-hover">
-            <thead >
+        <table class="table table-striped table-hover align-middle">
+            <thead class="table-light">
                 <tr>
-                    <th>Nombre</th>
-                    <th>Objetivo</th>
-                    <th>Tipo</th>
-                    <th>Prioridad</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
+                    <th style="min-width: 180px; max-width: 260px;">Nombre</th>
+                    <th style="min-width: 180px; max-width: 300px;">Objetivo</th>
+                    <th style="width: 100px;">Tipo</th>
+                    <th style="width: 90px;">Prioridad</th>
+                    <th style="width: 90px;">Estado</th>
+                    <th style="width: 120px;">Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 {% for caso in casos %}
                     <tr>
-                        <td><strong>{{ caso.nombre }}</strong></td>
-                        <td>{{ (caso.objetivo or '')[:50] }}{% if caso.objetivo and caso.objetivo|length > 50 %}...{% endif %}</td>
-                        <td><span class="badge bg-info">{{ caso.tipo.value }}</span></td>
-                        <td>
-                            <span class="badge bg-{% if caso.prioridad.value == 'CRÍTICA' %}danger{% elif caso.prioridad.value == 'ALTA' %}warning{% elif caso.prioridad.value == 'MEDIA' %}secondary{% else %}success{% endif %}">
-                                {{ caso.prioridad.value }}
+                        <td style="max-width: 260px;">
+                            <strong class="d-block text-truncate" title="{{ caso.nombre }}">{{ caso.nombre }}</strong>
+                        </td>
+                        <td style="max-width: 300px;">
+                            <span class="d-block text-truncate text-muted small" title="{{ caso.objetivo or '' }}">
+                                {{ caso.objetivo or '—' }}
                             </span>
                         </td>
-                        <td><span class="badge bg-secondary">{{ caso.estado.value }}</span></td>
                         <td>
-                            <a href="{{ url_for('casos_prueba_bp.detalle', caso_id=caso.id) }}" class="btn btn-sm btn-outline-primary">Ver</a>
-                            {% if 'miembro' in session.get('roles', []) %}
-                            <a href="{{ url_for('casos_prueba_bp.editar', caso_id=caso.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
-                            {% if caso.tipo.value == 'automatizado' and caso.tiene_script_valido() %}
-                            <button type="button" class="btn btn-sm btn-success btn-ejecutar-individual" data-caso-id="{{ caso.id }}" data-caso-nombre="{{ caso.nombre }}">
-                                <i class="bi bi-play-fill"></i> Ejecutar
-                            </button>
-                            {% endif %}
-                            {% endif %}
+                            <span class="badge bg-info text-dark">{{ caso.tipo.value }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-{% if caso.prioridad.value in ['crítica', 'critica'] %}danger{% elif caso.prioridad.value == 'alta' %}warning text-dark{% elif caso.prioridad.value == 'media' %}secondary{% else %}success{% endif %}">
+                                {{ caso.prioridad.value | capitalize }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-{% if caso.estado.value == 'pasado' %}success{% elif caso.estado.value == 'fallido' %}danger{% elif caso.estado.value == 'en_progreso' %}warning text-dark{% else %}secondary{% endif %}">
+                                {{ caso.estado.value }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <a href="{{ url_for('casos_prueba_bp.detalle', caso_id=caso.id) }}" class="btn btn-sm btn-outline-primary">Ver</a>
+                                {% if 'miembro' in session.get('roles', []) %}
+                                <a href="{{ url_for('casos_prueba_bp.editar', caso_id=caso.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                                {% endif %}
+                            </div>
                         </td>
                     </tr>
                 {% endfor %}
@@ -65,19 +75,4 @@
 {% else %}
     <div class="alert alert-info">No hay casos de prueba aún.</div>
 {% endif %}
-{% endblock %}
-
-{% block scripts_adicionales %}
-<script src="{{ url_for('static', filename='js/modal-ejecucion-individual.js') }}"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.btn-ejecutar-individual').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const casoId = this.dataset.casoId;
-                const casoNombre = this.dataset.casoNombre;
-                abrirModalEjecucionIndividual(casoId, casoNombre);
-            });
-        });
-    });
-</script>
 {% endblock %}

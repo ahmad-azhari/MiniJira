@@ -20,9 +20,13 @@ def _abs_url(path: str) -> str:
 @given("el usuario está en la página de login")
 def step_usuario_pagina_login(context):
     chrome_options = Options()
-    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--headless=new")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--ignore-certificate-errors")
+    chrome_options.add_argument("--proxy-server='direct://'")
+    chrome_options.add_argument("--proxy-bypass-list=*")
+    chrome_options.add_argument("--window-size=1920,1080")
     
     context.driver = webdriver.Chrome(options=chrome_options)
     context.driver.get(_abs_url("/auth/login"))
@@ -54,7 +58,7 @@ def step_clic_login(context):
         EC.element_to_be_clickable((By.CSS_SELECTOR, "button[type='submit']"))
     )
     login_button = context.driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
-    login_button.click()
+    context.driver.execute_script("arguments[0].click();", login_button)
 
 
 @then("es autenticado exitosamente")
@@ -76,6 +80,17 @@ def step_redirigido_dashboard(context):
     current_url = context.driver.current_url
     assert "/proyectos" in current_url, (
         f"No se redirigió al dashboard. URL actual: {current_url}"
+    )
+
+
+@then('se muestra mensaje de error "{mensaje}"')
+def step_muestra_mensaje_error(context, mensaje):
+    WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ".alert, .text-danger, .invalid-feedback"))
+    )
+    page_text = context.driver.find_element(By.TAG_NAME, "body").text
+    assert mensaje in page_text, (
+        f"No se encontró el mensaje '{mensaje}' en la página."
     )
 
 

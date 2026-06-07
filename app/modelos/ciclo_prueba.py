@@ -31,7 +31,7 @@ class CicloPrueba(db.Model):
     historiales = db.relationship('Historial', back_populates='ciclo_prueba', lazy=True)
 
     TRANSICIONES_VALIDAS = {
-        EstadoEnum.NUEVO: [EstadoEnum.EN_PROGRESO],
+        EstadoEnum.NUEVO: [EstadoEnum.EN_PROGRESO, EstadoEnum.PASADO, EstadoEnum.FALLIDO],
         EstadoEnum.EN_PROGRESO: [EstadoEnum.PASADO, EstadoEnum.FALLIDO, EstadoEnum.NUEVO],
         EstadoEnum.PASADO: [EstadoEnum.EN_PROGRESO, EstadoEnum.FALLIDO],
         EstadoEnum.FALLIDO: [EstadoEnum.EN_PROGRESO, EstadoEnum.PASADO],
@@ -39,11 +39,13 @@ class CicloPrueba(db.Model):
     }
 
     def puede_cambiar_a(self, nuevo_estado):
+        if self.estado == nuevo_estado:
+            return True
         transiciones = self.TRANSICIONES_VALIDAS.get(self.estado, [])
         return nuevo_estado in transiciones
 
     def actualizar_estado_desde_resultados(self):
-        from config.constantes import EstadoResultadoEnum, EstadoEnum
+        from config.constantes import EstadoResultadoEnum, EstadoEnum, EstadoEjecucionEnum
         
         if not self.resultados:
             return
@@ -56,6 +58,17 @@ class CicloPrueba(db.Model):
         if not resultados_por_caso:
             return
         
+        hay_en_progreso = any(
+            res.estado == EstadoResultadoEnum.EN_PROGRESO or 
+            (res.estado_ejecucion and res.estado_ejecucion in (EstadoEjecucionEnum.PENDIENTE, EstadoEjecucionEnum.EN_PROGRESO))
+            for res in resultados_por_caso.values()
+        )
+        
+        if hay_en_progreso:
+            if self.puede_cambiar_a(EstadoEnum.EN_PROGRESO):
+                self.estado = EstadoEnum.EN_PROGRESO
+            return
+            
         todos_tienen_resultados = len(resultados_por_caso) == len(self.casos_prueba)
         
         if todos_tienen_resultados:
@@ -67,7 +80,7 @@ class CicloPrueba(db.Model):
             else:
                 if self.puede_cambiar_a(EstadoEnum.FALLIDO):
                     self.estado = EstadoEnum.FALLIDO
-        elif self.estado == EstadoEnum.NUEVO:
+        else:
             if self.puede_cambiar_a(EstadoEnum.EN_PROGRESO):
                 self.estado = EstadoEnum.EN_PROGRESO
 

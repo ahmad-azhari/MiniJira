@@ -157,8 +157,19 @@ def seed_test_cases(usuario, epicas_dict):
         resultado_esperado="La sesión se inicia correctamente y se redirige al dashboard",
         estado=EstadoEnum.NUEVO,
         prioridad=PrioridadEnum.ALTA,
-        tipo=TipoTestEnum.MANUAL,
-        usuario_creacion_id=usuario.id
+        tipo=TipoTestEnum.AUTOMATIZADO,
+        usuario_creacion_id=usuario.id,
+        script_prueba="""Feature: Login Process
+
+  Scenario: Login con credenciales válidas
+    Given el usuario está en la página de login
+    When ingresa nombre de usuario "admin"
+    And ingresa contraseña "admin123"
+    And hace clic en el botón Login
+    Then es autenticado exitosamente
+    And es redirigido al dashboard principal
+""",
+        requiere_intento_manual=False
     )
     caso1.epicas.append(epicas_dict['historia1_1'])
     db.session.add(caso1)
@@ -173,8 +184,18 @@ def seed_test_cases(usuario, epicas_dict):
         resultado_esperado="Se muestra mensaje de error: 'Usuario o contraseña incorrectos'",
         estado=EstadoEnum.NUEVO,
         prioridad=PrioridadEnum.ALTA,
-        tipo=TipoTestEnum.MANUAL,
-        usuario_creacion_id=usuario.id
+        tipo=TipoTestEnum.AUTOMATIZADO,
+        usuario_creacion_id=usuario.id,
+        script_prueba="""Feature: Login Process
+
+  Scenario: Validar rechazo de contraseña incorrecta
+    Given el usuario está en la página de login
+    When ingresa nombre de usuario "admin"
+    And ingresa contraseña "wrongpass"
+    And hace clic en el botón Login
+    Then se muestra mensaje de error "Usuario o contraseña incorrectos"
+""",
+        requiere_intento_manual=False
     )
     caso2.epicas.append(epicas_dict['historia1_1'])
     db.session.add(caso2)
@@ -320,6 +341,72 @@ def seed_test_cases(usuario, epicas_dict):
     db.session.add(caso6)
     casos.append(caso6)
 
+    caso7 = CasoPrueba(
+        nombre="Verificar login manual con credenciales válidas",
+        objetivo="Validar que un usuario pueda iniciar sesión manualmente",
+        precondicion="Usuario debe estar registrado en el sistema",
+        descripcion="Intentar iniciar sesión con usuario y contraseña válidos desde la UI visualmente",
+        pasos_reproduccion="1. Ir a la página de login\n2. Ingresar usuario válido\n3. Ingresar contraseña correcta\n4. Hacer clic en 'Iniciar Sesión'",
+        resultado_esperado="La sesión se inicia correctamente y se redirige al dashboard",
+        estado=EstadoEnum.NUEVO,
+        prioridad=PrioridadEnum.ALTA,
+        tipo=TipoTestEnum.MANUAL,
+        usuario_creacion_id=usuario.id,
+        requiere_intento_manual=True
+    )
+    db.session.add(caso7)
+    casos.append(caso7)
+
+    caso8 = CasoPrueba(
+        nombre="Validar rechazo manual de contraseña incorrecta",
+        objetivo="Verificar que el login falla visualmente con contraseña incorrecta",
+        precondicion="Usuario debe estar registrado",
+        descripcion="Intentar login con contraseña incorrecta y verificar el mensaje de error visual",
+        pasos_reproduccion="1. Ir a login\n2. Ingresar usuario válido\n3. Ingresar contraseña incorrecta\n4. Clic en 'Iniciar Sesión'",
+        resultado_esperado="Se muestra mensaje de error emergente en color rojo",
+        estado=EstadoEnum.NUEVO,
+        prioridad=PrioridadEnum.ALTA,
+        tipo=TipoTestEnum.MANUAL,
+        usuario_creacion_id=usuario.id,
+        requiere_intento_manual=True
+    )
+    db.session.add(caso8)
+    casos.append(caso8)
+
+    caso9 = CasoPrueba(
+        nombre="Verificar visualización de tareas con descripciones muy largas",
+        objetivo="Comprobar que el diseño no se rompe con textos extensos",
+        precondicion="Ninguna",
+        descripcion="Crear una tarea con una descripción muy larga y visualizarla en la UI",
+        pasos_reproduccion="1. Crear tarea con descripción de más de 500 palabras\n2. Ir al listado de tareas\n3. Ver detalle de la tarea",
+        resultado_esperado="El texto debe ajustarse al contenedor o cortarse con puntos suspensivos sin deformar la tabla",
+        estado=EstadoEnum.NUEVO,
+        prioridad=PrioridadEnum.MEDIA,
+        tipo=TipoTestEnum.MANUAL,
+        usuario_creacion_id=usuario.id,
+        requiere_intento_manual=True
+    )
+    caso9.epicas.append(epicas_dict['historia2_1'])
+    db.session.add(caso9)
+    casos.append(caso9)
+
+    caso10 = CasoPrueba(
+        nombre="Verificar paginación o scroll en listado de tareas",
+        objetivo="Asegurar que se pueden ver todas las tareas si hay muchas",
+        precondicion="Tener al menos 20 tareas creadas",
+        descripcion="Acceder al listado de tareas cuando el usuario tiene un volumen alto de registros",
+        pasos_reproduccion="1. Generar 20+ tareas\n2. Ir al listado principal\n3. Desplazarse hacia abajo",
+        resultado_esperado="Se debe cargar un scroll infinito o mostrar controles de paginación",
+        estado=EstadoEnum.NUEVO,
+        prioridad=PrioridadEnum.BAJA,
+        tipo=TipoTestEnum.MANUAL,
+        usuario_creacion_id=usuario.id,
+        requiere_intento_manual=True
+    )
+    caso10.epicas.append(epicas_dict['historia2_2'])
+    db.session.add(caso10)
+    casos.append(caso10)
+
     db.session.flush()
     db.session.commit()
     print(f"[OK] Creados {len(casos)} casos de prueba")
@@ -331,15 +418,15 @@ def seed_test_cycles(usuario, casos):
     ciclos = []
 
     ciclo1 = CicloPrueba(
-        nombre="Ciclo 1: Pruebas de Autenticacion",
-        descripcion="Pruebas del modulo de login y autenticacion",
+        nombre="Ciclo 1: Pruebas Login Manuales",
+        descripcion="Pruebas manuales del modulo de login y autenticacion",
         estado=EstadoEnum.NUEVO
     )
     db.session.add(ciclo1)
     db.session.flush()
 
-    ciclo1.casos_prueba.append(casos[0])
-    ciclo1.casos_prueba.append(casos[1])
+    ciclo1.casos_prueba.append(casos[6])
+    ciclo1.casos_prueba.append(casos[7])
     ciclos.append(ciclo1)
 
     ciclo2 = CicloPrueba(
@@ -357,16 +444,32 @@ def seed_test_cycles(usuario, casos):
     ciclos.append(ciclo2)
 
     ciclo3 = CicloPrueba(
-        nombre="Ciclo 3: Pruebas de Regresion",
-        descripcion="Pruebas completas de regresion del sistema",
+        nombre="Ciclo 3: Pruebas de Tareas",
+        descripcion="Pruebas completas de las tareas del sistema",
         estado=EstadoEnum.NUEVO
     )
     db.session.add(ciclo3)
     db.session.flush()
 
-    for caso in casos:
-        ciclo3.casos_prueba.append(caso)
+    ciclo3.casos_prueba.append(casos[2])
+    ciclo3.casos_prueba.append(casos[3])
+    ciclo3.casos_prueba.append(casos[4])
+    ciclo3.casos_prueba.append(casos[5])
+    ciclo3.casos_prueba.append(casos[8])
+    ciclo3.casos_prueba.append(casos[9])
     ciclos.append(ciclo3)
+
+    ciclo4 = CicloPrueba(
+        nombre="Ciclo 4: Pruebas de Autenticacion",
+        descripcion="Ciclo dedicado exclusivamente a las pruebas de login automatizadas",
+        estado=EstadoEnum.NUEVO
+    )
+    db.session.add(ciclo4)
+    db.session.flush()
+
+    ciclo4.casos_prueba.append(casos[0])
+    ciclo4.casos_prueba.append(casos[1])
+    ciclos.append(ciclo4)
 
     db.session.commit()
     print(f"[OK] Creados {len(ciclos)} ciclos de prueba")
@@ -407,66 +510,7 @@ def seed_defects(usuario, casos):
 
 def seed_jenkins_results(usuario, casos, ciclos):
     print("[*] Sembrando ejemplos de ejecuciones de Jenkins...")
-
-    resultado1 = Resultado(
-        caso_prueba_id=casos[2].id, # Crear tarea
-        ciclo_prueba_id=ciclos[1].id, # CRUD tareas
-        estado=EstadoResultadoEnum.PASADO,
-        entorno='Automatizado',
-        resultado_obtenido='Crear tarea válida',
-        notas='Feature: Crear Tarea\nScenario: Crear una tarea válida → pasado',
-        modo_ejecucion=ModoEjecucionEnum.AUTOMATIZADO,
-        estado_ejecucion=EstadoEjecucionEnum.COMPLETADO,
-        jenkins_build_number=1,
-        jenkins_log_url='http://jenkins:8080/job/Pipeline/1/console',
-        tiempo_inicio_jenkins=datetime.utcnow() - timedelta(minutes=10),
-        tiempo_fin_jenkins=datetime.utcnow() - timedelta(minutes=9, seconds=45),
-        tiempo_ejecucion=15,
-        numero_intentos=1,
-        output_jenkins="""Started by user admin
-Rebuilding in port 5000...
-Running python behaving executor.py...
-Feature: Crear Tarea
-  Scenario: Crear una tarea válida
-    Given el usuario está autenticado -> passed
-    When envía una solicitud POST a "/api/tareas" -> passed
-    Then la respuesta debe tener código 201 -> passed
-1 scenario passed, 0 failed
-Sending callback post request to MiniJira...
-Finished: SUCCESS
-"""
-    )
-    db.session.add(resultado1)
-
-    resultado2 = Resultado(
-        caso_prueba_id=casos[3].id, # Listar tareas
-        ciclo_prueba_id=ciclos[1].id, # CRUD tareas
-        estado=EstadoResultadoEnum.FALLIDO,
-        entorno='Automatizado',
-        resultado_obtenido='Obtener todas las tareas sin token',
-        notas='Feature: Listar Tareas\nScenario: Listar tareas sin autenticación → fallido',
-        modo_ejecucion=ModoEjecucionEnum.AUTOMATIZADO,
-        estado_ejecucion=EstadoEjecucionEnum.COMPLETADO,
-        jenkins_build_number=2,
-        jenkins_log_url='http://jenkins:8080/job/Pipeline/2/console',
-        tiempo_inicio_jenkins=datetime.utcnow() - timedelta(minutes=5),
-        tiempo_fin_jenkins=datetime.utcnow() - timedelta(minutes=4, seconds=48),
-        tiempo_ejecucion=12,
-        numero_intentos=1,
-        output_jenkins="""Started by user admin
-Running behaves...
-Feature: Listar Tareas
-  Scenario: Listar tareas sin autenticación
-    When envía una solicitud GET a "/api/tareas" sin autenticación -> passed
-    Then la respuesta debe tener código 401 -> failed (expected 401, got 200)
-0 scenario passed, 1 failed
-Sending callback post request to MiniJira...
-Finished: FAILURE
-"""
-    )
-    db.session.add(resultado2)
-    db.session.commit()
-    print("[OK] Ejemplos de ejecuciones de Jenkins creados")
+    print("[OK] Ejemplos de ejecuciones omitidos")
 
 def main():
     app = crear_app()

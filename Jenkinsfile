@@ -11,7 +11,7 @@ pipeline {
     environment {
         RUTA_BASE = "/minijira/test_runner"
         RUTA_PYTHON = "python3"
-        URL_BACKEND = "http://app:5000"
+        URL_BACKEND = "http://minijira-app:5000"
     }
 
     parameters {

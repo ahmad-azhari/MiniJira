@@ -70,10 +70,11 @@ def ejecutar_feature(ruta_feature: str):
 
                 lineas_notas = [f"Característica: {caracteristica.get('name', '')}"]
                 for p in pasos:
-                    lineas_notas.append(
-                        f"{p.get('keyword', '')} {p.get('name', '')} "
-                        f"→ {p.get('result', {}).get('status', 'OMITIDO')}"
-                    )
+                    estado_paso = p.get('result', {}).get('status', 'OMITIDO')
+                    lineas_notas.append(f"{p.get('keyword', '')} {p.get('name', '')} → {estado_paso}")
+                    error_msg = p.get('result', {}).get('error_message')
+                    if estado_paso == 'failed' and error_msg:
+                        lineas_notas.append(f"  Error: {error_msg}")
 
                 salida = {
                     'estado_prueba': estado,

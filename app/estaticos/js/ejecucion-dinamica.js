@@ -373,6 +373,11 @@ function mostrarNotificacionDinamica(mensaje, tipo) {
     const alerta = document.createElement('div');
     alerta.className = `alert alert-${tipo} alert-dismissible fade show shadow`;
     alerta.setAttribute('role', 'alert');
+    alerta.style.position = 'fixed';
+    alerta.style.top = '20px';
+    alerta.style.right = '20px';
+    alerta.style.zIndex = '1050';
+    alerta.style.minWidth = '300px';
     alerta.innerHTML = `
         ${mensaje}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>

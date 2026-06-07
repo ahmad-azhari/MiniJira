@@ -23,11 +23,9 @@
     <div class="col-md-4 text-end">
         {% if 'miembro' in session.get('roles', []) %}
         <a href="{{ url_for('casos_prueba_bp.editar', caso_id=caso.id) }}" class="btn btn-warning btn-sm"> Editar</a>
-        {% if caso.tipo.value == 'automatizado' and caso.tiene_script_valido() %}
-        <button type="button" class="btn btn-success btn-sm" id="executeAutoBtn">
+        <a href="{{ url_for('ejecucion_bp.casos', caso_id=caso.id) }}" class="btn btn-success btn-sm">
             <i class="bi bi-play-fill"></i> Ejecutar
-        </button>
-        {% endif %}
+        </a>
         {% endif %}
         {% if 'admin' in session.get('roles', []) %}
         <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
@@ -104,45 +102,69 @@
 {% endif %}
 
 <div class="mt-4">
-    <h5>Resultados de Pruebas Previas</h5>
+    <h5>Ciclos que contienen este caso</h5>
+    {% if ciclos_del_caso %}
+        <div class="d-flex flex-wrap gap-2">
+            {% for ciclo in ciclos_del_caso %}
+                <a href="{{ url_for('ciclos_prueba_bp.detalle', ciclo_id=ciclo.id) }}"
+                   class="badge bg-primary text-decoration-none" style="font-size:0.9rem; padding:6px 10px;">
+                    {{ ciclo.nombre }}
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-muted">Este caso no pertenece a ningún ciclo.</p>
+    {% endif %}
+</div>
+
+<div class="mt-4">
+    <h5>Ejecuciones Individuales ({{ caso.resultados|length }})</h5>
     {% if caso.resultados %}
         <div class="table-responsive">
             <table class="table table-sm table-hover">
                 <thead class="table-light">
                     <tr>
-                        <th style="font-size: 0.9rem;">Fecha</th>
-                        <th style="font-size: 0.9rem;">Modo</th>
-                        <th style="font-size: 0.9rem;">Estado</th>
+                        <th>Fecha</th>
+                        <th>Modo</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for resultado in caso.resultados[:5] %}
-                    <tr data-resultado-id="{{ resultado.id }}"
-                        data-caso-id="{{ caso.id }}"
-                        data-ejecucion-pendiente="{% if resultado.estado_ejecucion and resultado.estado_ejecucion.value in ['pendiente', 'en_progreso'] %}true{% else %}false{% endif %}">
+                    {% for resultado in caso.resultados %}
+                    <tr>
+                        <td><small>{{ resultado.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</small></td>
                         <td>
-                            <small>{{ resultado.fecha_creacion.strftime('%d/%m %H:%M') }}</small>
-                        </td>
-                        <td>
-                            <span class="badge bg-{% if resultado.modo_ejecucion and resultado.modo_ejecucion.value == 'automatizado' %}success{% else %}secondary{% endif %}" style="font-size: 0.85rem;">
+                            <span class="badge bg-{% if resultado.modo_ejecucion and resultado.modo_ejecucion.value == 'automatizado' %}success{% else %}secondary{% endif %}" style="font-size:0.85rem;">
                                 {% if resultado.modo_ejecucion %}{{ resultado.modo_ejecucion.value }}{% else %}manual{% endif %}
                             </span>
                         </td>
                         <td>
-                            <span class="badge bg-{% if resultado.estado.value == 'pasado' %}success{% elif resultado.estado.value == 'fallido' %}danger{% elif resultado.estado.value == 'bloqueado' %}warning{% else %}info{% endif %}" style="font-size: 0.85rem;">
+                            <span class="badge bg-{% if resultado.estado.value == 'pasado' %}success{% elif resultado.estado.value == 'fallido' %}danger{% elif resultado.estado.value == 'en_progreso' %}warning{% else %}info{% endif %}" style="font-size:0.85rem;">
                                 {{ resultado.estado.value | upper }}
                             </span>
+                        </td>
+                        <td>
+                            {% if resultado.modo_ejecucion and resultado.modo_ejecucion.value == 'automatizado' %}
+                            <button type="button" class="btn btn-sm btn-outline-secondary btn-ver-resultado-auto"
+                                    data-resultado-id="{{ resultado.id }}"
+                                    data-caso-nombre="{{ caso.nombre }}">
+                                Ver detalles
+                            </button>
+                            {% else %}
+                            <button type="button" class="btn btn-sm btn-outline-secondary btn-ver-resultado-manual"
+                                    data-caso-id="{{ caso.id }}">
+                                Ver detalles
+                            </button>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        {% if caso.resultados|length > 5 %}
-        <p class="text-muted small">... y {{ caso.resultados|length - 5 }} resultados más</p>
-        {% endif %}
     {% else %}
-        <p class="text-muted">No hay resultados de ejecución aún.</p>
+        <p class="text-muted">No hay ejecuciones registradas aún.</p>
     {% endif %}
 </div>
 {% endblock %}
@@ -150,6 +172,8 @@
 {% block scripts_adicionales %}
 <script src="{{ url_for('static', filename='js/ejecucion-dinamica.js') }}"></script>
 <script src="{{ url_for('static', filename='js/modal-ejecucion-individual.js') }}"></script>
+<script src="{{ url_for('static', filename='js/modal-resultados.js') }}"></script>
+<script src="{{ url_for('static', filename='js/modal-prueba-manual.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const confirmInput = document.getElementById('confirmDeleteInput');
@@ -172,14 +196,21 @@
             }
         }
 
-        const autoBtn = document.getElementById('executeAutoBtn');
-        if (autoBtn) {
-            autoBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const casoId = {{ caso.id }};
-                abrirModalEjecucionIndividual(casoId, '{{ caso.nombre }}');
+
+        document.querySelectorAll('.btn-ver-resultado-auto').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const resultadoId = this.dataset.resultadoId;
+                const casoNombre = this.dataset.casoNombre;
+                abrirModalResultado(resultadoId, { casoNombre: casoNombre });
             });
-        }
+        });
+
+        document.querySelectorAll('.btn-ver-resultado-manual').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const casoId = this.dataset.casoId;
+                abrirModalPruebaManual(casoId);
+            });
+        });
     });
 
     function showAlert(message, type) {

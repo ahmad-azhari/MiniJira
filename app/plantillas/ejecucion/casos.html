@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+
+{% block titulo %}Ejecución Individual - Mini Jira{% endblock %}
+
+{% block estilos_adicionales %}
+<style>
+    .case-card {
+        transition: all 0.25s ease;
+        border-left: 4px solid #dee2e6;
+    }
+    .case-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08) !important;
+    }
+    .chart-container {
+        position: relative;
+        height: 250px;
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block contenido %}
+<div class="container-fluid py-4">
+    <div class="row align-items-center mb-4">
+        <div class="col-md-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('ejecucion_bp.indice') }}">Ejecución</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Individual</li>
+                </ol>
+            </nav>
+            <h1 class="h2 mb-1">Ejecución Individual de Casos</h1>
+            <p class="text-muted mb-0">Ejecute y supervise pruebas de forma independiente.</p>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-5 bg-white rounded-3">
+        <div class="card-body p-4">
+            <h4 class="card-title h5 mb-4">Estado General de Casos Individuales</h4>
+            <div class="row justify-content-center">
+                <div class="col-md-6 col-lg-4">
+                    {% if stats_casos and stats_casos.total > 0 %}
+                        <div class="chart-container">
+                            <canvas id="chartCasos"></canvas>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info mb-0">No hay casos de prueba creados.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs mb-4" id="casosTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="auto-tab" data-bs-toggle="tab" data-bs-target="#auto-tab-pane" type="button" role="tab" aria-controls="auto-tab-pane" aria-selected="true">
+                Pruebas Automáticas <span class="badge bg-secondary ms-1">{{ casos_automaticos|length }}</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="manual-tab" data-bs-toggle="tab" data-bs-target="#manual-tab-pane" type="button" role="tab" aria-controls="manual-tab-pane" aria-selected="false">
+                Pruebas Manuales <span class="badge bg-secondary ms-1">{{ casos_manuales|length }}</span>
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="casosTabsContent">
+        <div class="tab-pane fade show active" id="auto-tab-pane" role="tabpanel" aria-labelledby="auto-tab" tabindex="0">
+            {% if casos_automaticos %}
+                <div class="row g-3">
+                    {% for item in casos_automaticos %}
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="card case-card shadow-sm h-100 border-0 bg-white rounded-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title h6 mb-0 text-truncate me-2" title="{{ item.caso.nombre }}">
+                                        {{ item.caso.nombre }}
+                                    </h5>
+                                    <div class="estado-caso-badge flex-shrink-0" id="badge-caso-{{ item.caso.id }}">
+                                        {% if item.ejecucion_activa %}
+                                            <span class="badge bg-info">EN PROGRESO</span>
+                                        {% elif item.ultimo_resultado %}
+                                            {% set st = item.ultimo_resultado.estado.value %}
+                                            <span class="badge bg-{% if st == 'pasado' %}success{% elif st == 'fallido' %}danger{% elif st == 'en_progreso' %}warning text-dark{% else %}secondary{% endif %}">
+                                                {{ st | upper }}
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">SIN EJECUTAR</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <p class="card-text text-muted small text-truncate mb-3" title="{{ item.caso.objetivo }}">
+                                    {{ item.caso.objetivo or 'Sin objetivo' }}
+                                </p>
+                                <div class="d-flex gap-2 justify-content-end">
+                                    <a href="{{ url_for('casos_prueba_bp.detalle', caso_id=item.caso.id) }}" class="btn btn-sm btn-outline-secondary">Detalles</a>
+                                    {% if item.ultimo_resultado %}
+                                        <button type="button" class="btn btn-sm btn-outline-info btn-ver-resultado-auto" data-resultado-id="{{ item.ultimo_resultado.id }}" data-caso-nombre="{{ item.caso.nombre }}">Ver</button>
+                                    {% endif %}
+                                    {% if 'miembro' in session.get('roles', []) and item.caso.tiene_script_valido() %}
+                                        <button type="button" class="btn btn-sm btn-success btn-ejecutar-auto" data-caso-id="{{ item.caso.id }}" data-caso-nombre="{{ item.caso.nombre }}">Ejecutar</button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">No hay casos de prueba automáticos.</div>
+            {% endif %}
+        </div>
+
+        <div class="tab-pane fade" id="manual-tab-pane" role="tabpanel" aria-labelledby="manual-tab" tabindex="0">
+            {% if casos_manuales %}
+                <div class="row g-3">
+                    {% for item in casos_manuales %}
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="card case-card shadow-sm h-100 border-0 bg-white rounded-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title h6 mb-0 text-truncate me-2" title="{{ item.caso.nombre }}">
+                                        {{ item.caso.nombre }}
+                                    </h5>
+                                    <div class="estado-caso-badge flex-shrink-0" id="badge-caso-{{ item.caso.id }}">
+                                        {% if item.ultimo_resultado %}
+                                            {% set st = item.ultimo_resultado.estado.value %}
+                                            <span class="badge bg-{% if st == 'pasado' %}success{% elif st == 'fallido' %}danger{% elif st == 'en_progreso' %}warning text-dark{% else %}secondary{% endif %}">
+                                                {{ st | upper }}
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">SIN EJECUTAR</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <p class="card-text text-muted small text-truncate mb-3" title="{{ item.caso.objetivo }}">
+                                    {{ item.caso.objetivo or 'Sin objetivo' }}
+                                </p>
+                                <div class="d-flex gap-2 justify-content-end">
+                                    <a href="{{ url_for('casos_prueba_bp.detalle', caso_id=item.caso.id) }}" class="btn btn-sm btn-outline-secondary">Detalles</a>
+                                    {% if item.ultimo_resultado %}
+                                        <button type="button" class="btn btn-sm btn-outline-info btn-ver-resultado-manual" data-caso-id="{{ item.caso.id }}">Ver</button>
+                                    {% endif %}
+                                    {% if 'miembro' in session.get('roles', []) %}
+                                        <a href="{{ url_for('resultados_bp.crear', caso_id=item.caso.id) }}" class="btn btn-sm btn-success">Ejecutar</a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">No hay casos de prueba manuales.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% include "ejecucion/modales_comunes.html" ignore missing %}
+{% endblock %}
+
+{% block scripts_adicionales %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/ejecucion-dinamica.js') }}"></script>
+<script src="{{ url_for('static', filename='js/modal-ejecucion-individual.js') }}"></script>
+<script src="{{ url_for('static', filename='js/modal-resultados.js') }}"></script>
+<script src="{{ url_for('static', filename='js/modal-prueba-manual.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const activeTabId = sessionStorage.getItem('casosActiveTab');
+        if (activeTabId) {
+            const tabEl = document.querySelector(`button[data-bs-target="${activeTabId}"]`);
+            if (tabEl) {
+                bootstrap.Tab.getOrCreateInstance(tabEl).show();
+            }
+        }
+
+        document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(tab => {
+            tab.addEventListener('shown.bs.tab', function (event) {
+                sessionStorage.setItem('casosActiveTab', event.target.dataset.bsTarget);
+            });
+        });
+
+        const statsCasos = {{ stats_casos|tojson|safe if stats_casos else 'null' }};
+
+        if (statsCasos && statsCasos.total > 0) {
+            const ctxCasos = document.getElementById('chartCasos').getContext('2d');
+            new Chart(ctxCasos, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Pasados', 'Fallidos', 'En Progreso', 'Sin Ejecutar'],
+                    datasets: [{
+                        data: [
+                            statsCasos.pasados,
+                            statsCasos.fallidos,
+                            statsCasos.en_progreso,
+                            statsCasos.pendientes
+                        ],
+                        backgroundColor: ['#198754', '#dc3545', '#0d6efd', '#6c757d'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: { position: 'right' }
+                    }
+                }
+            });
+        }
+
+        document.querySelectorAll('.btn-ejecutar-auto').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const casoId = this.dataset.casoId;
+                const casoNombre = this.dataset.casoNombre;
+                abrirModalEjecucionIndividual(casoId, casoNombre);
+            });
+        });
+
+        document.querySelectorAll('.btn-ver-resultado-auto').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const resultadoId = this.dataset.resultadoId;
+                const casoNombre = this.dataset.casoNombre;
+                abrirModalResultado(resultadoId, { casoNombre: casoNombre });
+            });
+        });
+
+        document.querySelectorAll('.btn-ver-resultado-manual').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const casoId = this.dataset.casoId;
+                abrirModalPruebaManual(casoId);
+            });
+        });
+
+        const modales = ['modalEjecucionIndividual', 'modalPruebaManual'];
+        modales.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('hidden.bs.modal', function () {
+                    window.location.reload();
+                });
+            }
+        });
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const casoIdParam = urlParams.get('caso_id');
+        if (casoIdParam) {
+            const card = document.querySelector(`.card[data-caso-id="${casoIdParam}"]`);
+            if (card) {
+                const pane = card.closest('.tab-pane');
+                if (pane && !pane.classList.contains('active')) {
+                    const tabBtn = document.querySelector(`[data-bs-target="#${pane.id}"]`);
+                    if (tabBtn) bootstrap.Tab.getOrCreateInstance(tabBtn).show();
+                }
+                setTimeout(() => {
+                    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    card.style.borderLeft = '4px solid #0d6efd';
+                    card.style.backgroundColor = '#f8f9fa';
+                }, 300);
+            }
+        }
+    });
+
+    function showAlert(message, type) {
+        const alertClass = `alert-${type}`;
+        const alert = document.createElement('div');
+        alert.className = `alert ${alertClass} alert-dismissible fade show`;
+        alert.setAttribute('role', 'alert');
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        const container = document.querySelector('.row.mb-4') || document.body;
+        container.insertAdjacentElement('afterend', alert);
+
+        setTimeout(() => {
+            alert.remove();
+        }, 5000);
+    }
+</script>
+{% endblock %}
