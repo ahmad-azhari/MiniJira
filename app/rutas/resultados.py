@@ -31,17 +31,13 @@ def crear(caso_id):
     if request.method == 'POST':
         estado = request.form.get('estado', EstadoResultadoEnum.PASADO.value)
         notas = request.form.get('notas', '').strip()
-        ciclo_id = request.form.get('ciclo_id')
+        ciclo_id = request.form.get('ciclo_id') or None
         entorno = request.form.get('entorno', '').strip()
         resultado_obtenido = request.form.get('resultado_obtenido', '').strip()
 
-        if not ciclo_id:
-            flash('Debe seleccionar un ciclo de prueba.', 'danger')
-            return redirect(url_for('resultados_bp.crear', caso_id=caso_id))
-
         resultado = Resultado(
             caso_prueba_id=caso_id,
-            ciclo_prueba_id=ciclo_id,
+            ciclo_prueba_id=int(ciclo_id) if ciclo_id else None,
             estado=EstadoResultadoEnum(estado),
             notas=notas,
             entorno=entorno,
@@ -51,26 +47,28 @@ def crear(caso_id):
         db.session.add(resultado)
         db.session.commit()
 
-        ciclo = CicloPrueba.query.get(ciclo_id)
-        if ciclo:
-            ciclo.actualizar_estado_desde_resultados()
-            db.session.commit()
+        if ciclo_id:
+            ciclo = CicloPrueba.query.get(ciclo_id)
+            if ciclo:
+                ciclo.actualizar_estado_desde_resultados()
+                db.session.commit()
 
-        ejecucion_ciclo = EjecucionCiclo.query.filter_by(
-            ciclo_prueba_id=ciclo_id
-        ).order_by(EjecucionCiclo.fecha_ejecucion.desc()).first()
-        if ejecucion_ciclo:
-            try:
-                AutomatizacionService.actualizar_ejecucion_ciclo(ejecucion_ciclo.id)
-            except Exception as e:
-                current_app.logger.error(f"Error actualizando ejecución de ciclo: {e}")
+            ejecucion_ciclo = EjecucionCiclo.query.filter_by(
+                ciclo_prueba_id=ciclo_id
+            ).order_by(EjecucionCiclo.fecha_ejecucion.desc()).first()
+            if ejecucion_ciclo:
+                try:
+                    AutomatizacionService.actualizar_ejecucion_ciclo(ejecucion_ciclo.id)
+                except Exception as e:
+                    current_app.logger.error(f"Error actualizando ejecución de ciclo: {e}")
 
         flash('Resultado de prueba registrado exitosamente.', 'success')
-        return redirect(url_for('resultados_bp.detalle', resultado_id=resultado.id))
+        return redirect(url_for('ejecucion_bp.casos'))
 
     ciclos = CicloPrueba.query.all()
     ciclo_id_preseleccionado = request.args.get('ciclo_id', type=int)
-    return render_template('resultados/crear.html', caso=caso, ciclos=ciclos, ciclo_id_preseleccionado=ciclo_id_preseleccionado)
+    individual = request.args.get('individual', type=int)
+    return render_template('resultados/crear.html', caso=caso, ciclos=ciclos, ciclo_id_preseleccionado=ciclo_id_preseleccionado, individual=individual)
 
 
 @resultados_bp.route('/<int:resultado_id>/editar', methods=['GET', 'POST'])

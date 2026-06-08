@@ -213,6 +213,11 @@ def casos():
         'pendientes': pendientes_ind
     }
             
+    caso_id_seleccionado = request.args.get('caso_id', type=int)
+    if caso_id_seleccionado:
+        casos_automaticos.sort(key=lambda x: x['caso'].id != caso_id_seleccionado)
+        casos_manuales.sort(key=lambda x: x['caso'].id != caso_id_seleccionado)
+
     return render_template('ejecucion/casos.html',
                            casos_automaticos=casos_automaticos,
                            casos_manuales=casos_manuales,

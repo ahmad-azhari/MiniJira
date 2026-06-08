@@ -32,7 +32,7 @@
                     <div class="card-footer">
                         <div class="d-flex gap-2 flex-wrap">
                             <a href="{{ url_for('ciclos_prueba_bp.detalle', ciclo_id=ciclo.id) }}" class="btn btn-sm btn-outline-primary">Ver Detalle</a>
-                            <a href="{{ url_for('ejecucion_bp.indice', ciclo_id=ciclo.id) }}" class="btn btn-sm btn-success">Ejecutar</a>
+                            <a href="{{ url_for('ejecucion_bp.ciclos', ciclo_id=ciclo.id) }}" class="btn btn-sm btn-success">Ejecutar</a>
                             {% if 'miembro' in session.get('roles', []) %}
                             <a href="{{ url_for('ciclos_prueba_bp.editar', ciclo_id=ciclo.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
                             {% endif %}

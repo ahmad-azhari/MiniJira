@@ -13,19 +13,10 @@
     </div>
     <div class="col-md-4 text-end">
         <div class="d-flex gap-2 justify-content-end flex-wrap">
-            <a href="{{ url_for('ejecucion_bp.ciclos', ciclo_id=ciclo.id) }}" class="btn btn-info btn-sm">
-                <i class="bi bi-eye"></i> Ver Ejecución
-            </a>
             {% if 'miembro' in session.get('roles', []) and ciclo.casos_prueba|length > 0 %}
-            <button type="button"
-                    class="btn btn-success btn-sm"
-                    id="executeJenkinsCycleBtn"
-                    data-ciclo-id="{{ ciclo.id }}"
-                    data-es-solo-manual="{{ ciclo.es_solo_manual() }}"
-                    data-tiene-manuales="{{ ciclo.tiene_pruebas_manuales() }}"
-                    data-tiene-automatizados="{{ ciclo.tiene_pruebas_automatizadas() }}">
-                <i class="bi bi-play-fill"></i> Ejecutar con Jenkins
-            </button>
+            <a href="{{ url_for('ejecucion_bp.ciclos', ciclo_id=ciclo.id) }}" class="btn btn-success btn-sm">
+                <i class="bi bi-play-fill"></i> Ejecutar
+            </a>
             <button type="button"
                     class="btn btn-outline-primary btn-sm btn-ver-resumen-ciclo {% if not ciclo_tiene_resumen_auto %}d-none{% endif %}"
                     data-ver-ciclo-id="{{ ciclo.id }}"

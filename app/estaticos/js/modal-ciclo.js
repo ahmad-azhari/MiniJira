@@ -143,4 +143,20 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
     }
+
+    const btnDescargar = document.getElementById('btnDescargarLogCiclo');
+    if (btnDescargar) {
+        btnDescargar.addEventListener('click', function () {
+            const logs = document.getElementById('modalCicloLogCompleto').textContent;
+            const blob = new Blob([logs], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `jenkins-log-ciclo-${new Date().getTime()}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        });
+    }
 });

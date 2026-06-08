@@ -9,15 +9,17 @@
         <p class="text-muted">Caso: <strong>{{ caso.nombre }}</strong></p>
 
         <form method="POST" class="mt-4">
+            {% if not individual %}
             <div class="mb-3">
-                <label for="ciclo_id" class="form-label">Ciclo de Prueba *</label>
-                <select class="form-select" id="ciclo_id" name="ciclo_id" required>
-                    <option value="">-- Seleccionar --</option>
+                <label for="ciclo_id" class="form-label">Ciclo de Prueba <span class="text-muted small">(opcional)</span></label>
+                <select class="form-select" id="ciclo_id" name="ciclo_id">
+                    <option value="">-- Sin ciclo asociado --</option>
                     {% for ciclo in ciclos %}
                         <option value="{{ ciclo.id }}" {% if ciclo_id_preseleccionado == ciclo.id %}selected{% endif %}>{{ ciclo.nombre }}</option>
                     {% endfor %}
                 </select>
             </div>
+            {% endif %}
 
             <div class="mb-3">
                 <label for="estado" class="form-label">Estado de la Ejecución *</label>
@@ -45,7 +47,7 @@
 
             <div class="mt-4">
                 <button type="submit" class="btn btn-success"> Registrar Resultado</button>
-                <a href="{{ url_for('casos_prueba_bp.detalle', caso_id=caso.id) }}" class="btn btn-secondary"> Cancelar</a>
+                <a href="{{ request.referrer or url_for('ejecucion_bp.casos') }}" class="btn btn-secondary"> Cancelar</a>
             </div>
         </form>
     </div>

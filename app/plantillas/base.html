@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +9,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
     {% block estilos_adicionales %}{% endblock %}
 </head>
+
 <body>
     <nav class="navbar navbar-expand-lg navbar-light">
         <div class="container-fluid">
@@ -18,49 +20,54 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     {% if session.usuario_id %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('proyectos_bp.indice') }}">Proyectos</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('epicas_bp.indice') }}">Épicas</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('epicas_bp.historias') }}">Historias</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('casos_prueba_bp.indice') }}">Casos</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('ciclos_prueba_bp.indice') }}">Ciclos</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('ejecucion_bp.indice') }}">Ejecución</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('defectos_bp.indice') }}">Defectos</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('reportes_bp.dashboard') }}">Reportes</a>
-                        </li>
-                        {% if 'admin' in session.get('roles', []) %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('usuarios_bp.indice') }}">Usuarios</a>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('proyectos_bp.indice') }}">Proyectos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('epicas_bp.indice') }}">Épicas</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('epicas_bp.historias') }}">Historias</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('casos_prueba_bp.indice') }}">Casos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('ciclos_prueba_bp.indice') }}">Ciclos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('ejecucion_bp.indice') }}">Ejecución</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('defectos_bp.indice') }}">Defectos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('reportes_bp.dashboard') }}">Reportes</a>
+                    </li>
+                    {% if 'admin' in session.get('roles', []) %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('usuarios_bp.indice') }}">Usuarios</a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="usuarioDropdown" role="button"
+                            data-bs-toggle="dropdown">
+                            {{ session.nombre_usuario }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item"
+                                    href="{{ url_for('usuarios_bp.perfil', usuario_id=session.usuario_id) }}">Mi
+                                    Perfil</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
                             </li>
-                        {% endif %}
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="usuarioDropdown" role="button" data-bs-toggle="dropdown">
-                                {{ session.nombre_usuario }}
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="{{ url_for('usuarios_bp.perfil', usuario_id=session.usuario_id) }}">Mi Perfil</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ url_for('auth_bp.logout') }}">Cerrar Sesión</a></li>
-                            </ul>
-                        </li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth_bp.logout') }}">Cerrar Sesión</a></li>
+                        </ul>
+                    </li>
                     {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth_bp.login') }}">Iniciar Sesión</a>
-                        </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('auth_bp.login') }}">Iniciar Sesión</a>
+                    </li>
                     {% endif %}
                 </ul>
             </div>
@@ -68,16 +75,17 @@
     </nav>
 
     <main class="container-fluid">
-        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1055;">
+        <div class="position-fixed top-0 end-0 p-3" style="z-index: 2000;">
             {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{% if category == 'danger' %}danger{% elif category == 'warning' %}warning{% elif category == 'info' %}info{% else %}success{% endif %} alert-dismissible fade show shadow" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    {% endfor %}
-                {% endif %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{% if category == 'danger' %}danger{% elif category == 'warning' %}warning{% elif category == 'info' %}info{% else %}success{% endif %} alert-dismissible fade show shadow"
+                role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+            {% endif %}
             {% endwith %}
         </div>
 
@@ -97,17 +105,20 @@
                 <div class="modal-body p-0">
                     <ul class="nav nav-tabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="tabResultado" data-bs-toggle="tab" data-bs-target="#panelResultado" type="button" role="tab">
+                            <button class="nav-link active" id="tabResultado" data-bs-toggle="tab"
+                                data-bs-target="#panelResultado" type="button" role="tab">
                                 Resultado
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="tabLogs" data-bs-toggle="tab" data-bs-target="#panelLogs" type="button" role="tab">
+                            <button class="nav-link" id="tabLogs" data-bs-toggle="tab" data-bs-target="#panelLogs"
+                                type="button" role="tab">
                                 Logs Jenkins
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="tabDetalles" data-bs-toggle="tab" data-bs-target="#panelDetalles" type="button" role="tab">
+                            <button class="nav-link" id="tabDetalles" data-bs-toggle="tab"
+                                data-bs-target="#panelDetalles" type="button" role="tab">
                                 Detalles
                             </button>
                         </li>
@@ -138,7 +149,8 @@
                                     Descargar
                                 </button>
                             </div>
-                            <pre id="modalLogs" class="bg-dark text-light p-3 rounded" style="max-height: 400px; overflow: auto; font-size: 0.85rem;">Cargando logs...</pre>
+                            <pre id="modalLogs" class="bg-dark text-light p-3 rounded"
+                                style="max-height: 400px; overflow: auto; font-size: 0.85rem;">Cargando logs...</pre>
                         </div>
 
                         <div class="tab-pane fade" id="panelDetalles" role="tabpanel">
@@ -182,7 +194,8 @@
         </div>
     </div>
 
-    <div class="modal fade" id="modalEjecucionIndividual" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal fade" id="modalEjecucionIndividual" tabindex="-1" data-bs-backdrop="static"
+        data-bs-keyboard="false">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header border-bottom">
@@ -195,17 +208,20 @@
                 <div class="modal-body p-0">
                     <ul class="nav nav-tabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="tabIndividualResultado" data-bs-toggle="tab" data-bs-target="#panelIndividualResultado" type="button" role="tab">
+                            <button class="nav-link active" id="tabIndividualResultado" data-bs-toggle="tab"
+                                data-bs-target="#panelIndividualResultado" type="button" role="tab">
                                 Resultado
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="tabIndividualLogs" data-bs-toggle="tab" data-bs-target="#panelIndividualLogs" type="button" role="tab">
+                            <button class="nav-link" id="tabIndividualLogs" data-bs-toggle="tab"
+                                data-bs-target="#panelIndividualLogs" type="button" role="tab">
                                 Logs
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="tabIndividualDetalles" data-bs-toggle="tab" data-bs-target="#panelIndividualDetalles" type="button" role="tab">
+                            <button class="nav-link" id="tabIndividualDetalles" data-bs-toggle="tab"
+                                data-bs-target="#panelIndividualDetalles" type="button" role="tab">
                                 Detalles
                             </button>
                         </li>
@@ -227,14 +243,17 @@
                         </div>
                         <div class="tab-pane fade" id="panelIndividualLogs" role="tabpanel">
                             <div class="mb-2">
-                                <button type="button" class="btn btn-sm btn-outline-primary" id="btnCopiarLogsIndividual">
+                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                    id="btnCopiarLogsIndividual">
                                     Copiar logs
                                 </button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" id="btnDescargarLogsIndividual">
+                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    id="btnDescargarLogsIndividual">
                                     Descargar
                                 </button>
                             </div>
-                            <pre id="modalLogsIndividual" class="bg-dark text-light p-3 rounded" style="max-height: 400px; overflow: auto; font-size: 0.85rem;">Cargando logs...</pre>
+                            <pre id="modalLogsIndividual" class="bg-dark text-light p-3 rounded"
+                                style="max-height: 400px; overflow: auto; font-size: 0.85rem;">Cargando logs...</pre>
                         </div>
                         <div class="tab-pane fade" id="panelIndividualDetalles" role="tabpanel">
                             <div class="row">
@@ -297,18 +316,21 @@
                 <div class="modal-body p-0">
                     <ul class="nav nav-tabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="tabCicloResumen" data-bs-toggle="tab" data-bs-target="#panelCicloResumen" type="button" role="tab">
+                            <button class="nav-link active" id="tabCicloResumen" data-bs-toggle="tab"
+                                data-bs-target="#panelCicloResumen" type="button" role="tab">
                                 Resumen
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="tabCicloDetalles" data-bs-toggle="tab" data-bs-target="#panelCicloDetalles" type="button" role="tab">
-                                Detalles
+                            <button class="nav-link" id="tabCicloLogs" data-bs-toggle="tab"
+                                data-bs-target="#panelCicloLogs" type="button" role="tab">
+                                Log completo
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="tabCicloLogs" data-bs-toggle="tab" data-bs-target="#panelCicloLogs" type="button" role="tab">
-                                Log completo
+                            <button class="nav-link" id="tabCicloDetalles" data-bs-toggle="tab"
+                                data-bs-target="#panelCicloDetalles" type="button" role="tab">
+                                Detalles
                             </button>
                         </li>
                     </ul>
@@ -366,8 +388,12 @@
                                 <button type="button" class="btn btn-sm btn-outline-primary" id="btnCopiarLogCiclo">
                                     Copiar log
                                 </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="btnDescargarLogCiclo">
+                                    Descargar
+                                </button>
                             </div>
-                            <pre id="modalCicloLogCompleto" class="modal-notas bg-dark text-light mb-0" style="max-height: 450px;">Cargando...</pre>
+                            <pre id="modalCicloLogCompleto" class="modal-notas bg-dark text-light mb-0"
+                                style="max-height: 450px;">Cargando...</pre>
                         </div>
                     </div>
                 </div>
@@ -446,6 +472,21 @@
     <script src="{{ url_for('static', filename='js/modal-resultados.js') }}"></script>
     <script src="{{ url_for('static', filename='js/modal-ciclo.js') }}"></script>
     <script src="{{ url_for('static', filename='js/modal-prueba-manual.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var alertList = document.querySelectorAll('.alert');
+            alertList.forEach(function(alert) {
+                var closeBtn = alert.querySelector('.btn-close');
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', function() {
+                        var bsAlert = new bootstrap.Alert(alert);
+                        bsAlert.close();
+                    });
+                }
+            });
+        });
+    </script>
     {% block scripts_adicionales %}{% endblock %}
 </body>
+
 </html>
